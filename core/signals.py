@@ -1,34 +1,33 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from .models import Sale_list, Car, Sale, Order
+from .models import Sale_list
 
 
-# Правило: Когда автомобиль попадает в "Состав_Продажи", статус -> "продан"
 @receiver(post_save, sender=Sale_list)
-def car_sold_trigger(sender, instance, created, **kwargs):
+def car_sold_handler(sender, instance, created, **kwargs):
+    """
+    Автоматически меняет статус автомобиля на 'Продан' после продажи.
+    """
     if created:
         car = instance.vin
-        car.car_status = 'продан'
+        # Устанавливаем статус с Большой буквы (как в БД)
+        car.car_status = 'Продан'
         car.save()
 
-        # Правило: Если в продаже > 1 авто, считается общая сумма (тут обновление родительской Продажи)
-        # Так как у нас связь 1:1 в таблице Состав, мы просто обновляем сумму
+        # Обновляем итоговую сумму в таблице Продажа
         sale = instance.id_sale
         sale.end_price = instance.discounted_prise
         sale.save()
 
 
-# Правило: Расчет цены со скидкой при создании записи в Составе Продажи
 @receiver(pre_save, sender=Sale_list)
 def calculate_discount_price(sender, instance, **kwargs):
+    """
+    Автоматически считает цену со скидкой перед сохранением
+    """
     car = instance.vin
-    # Правило: Если есть скидка, применяется она
     if car.discount and car.discount > 0:
         price = car.price * (1 - car.discount / 100)
     else:
         price = car.price
     instance.discounted_prise = int(price)
-
-# Правило: После получения авто (приход на склад) они добавляются в список.
-# Реализуем как: Если у авто меняется статус на "прибыл", он готов к продаже.
-# Это скорее процесс, чем триггер кода, но можно добавить логику здесь, если нужно.

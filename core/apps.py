@@ -6,5 +6,5 @@ class CoreConfig(AppConfig):
     verbose_name = 'Автосалон'
 
     def ready(self):
-        # Подключаем сигналы (аналог триггеров БД)
+        # Эта строка обязательна, чтобы заработало автоматическое обновление статуса
         import core.signals
