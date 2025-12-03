@@ -1,115 +1,82 @@
 from ninja import NinjaAPI, ModelSchema
-from ninja.pagination import paginate
-from typing import List, Optional
+from typing import List
 from django.shortcuts import get_object_or_404
-# Импортируем твои модели
-from .models import Car, Order, Client, Sale, Employee, Test_drive
+from .models import Car, Client, Sale, Employee
 
-# Создаем экземпляр API
-api = NinjaAPI(title="Car Dealer API")
+api = NinjaAPI(title="Auto Shop CRM API")
 
-# ==========================================
-# 1. СХЕМЫ (SCHEMAS)
-# Описываем, как данные будут выглядеть в JSON
-# ==========================================
+
+# --- Схемы данных ---
 
 class CarSchema(ModelSchema):
     class Meta:
         model = Car
-        # Можно перечислить конкретные поля или взять все ("__all__")
         fields = "__all__"
+
 
 class ClientSchema(ModelSchema):
     class Meta:
         model = Client
-        fields = ['passport_client', 'fio', 'phone_number', 'b_day']
-
-class EmployeeSchema(ModelSchema):
-    class Meta:
-        model = Employee
-        fields = ['id_employee', 'fio', 'rank', 'phone_number']
-
-class OrderSchema(ModelSchema):
-    class Meta:
-        model = Order
         fields = "__all__"
 
-# Для продажи часто нужно видеть не просто ID сотрудника, а его ФИО.
-# Сделаем вложенную схему (это продвинутый уровень, но очень полезный)
-class SaleSchema(ModelSchema):
-    # Переопределяем поле, чтобы Ninja автоматически подтянул данные связанного объекта
-    ip_employee: EmployeeSchema
-    passport_client: ClientSchema
 
+class SaleSchema(ModelSchema):
     class Meta:
         model = Sale
-        fields = ['id_sale', 'sale_date', 'end_price', 'ip_employee', 'passport_client']
+        fields = ['id_sale', 'sale_date', 'end_price']
 
-# ==========================================
-# 2. ЭНДПОИНТЫ ДЛЯ АВТОМОБИЛЕЙ
-# ==========================================
+
+# --- Ручки (Endpoints) ---
 
 @api.get("/cars", response=List[CarSchema])
-@paginate # Добавляет пагинацию (страницы), если машин очень много
-def get_cars(request, status: Optional[str] = None):
-    """
-    Получить список всех авто.
-    Можно фильтровать по ?status=В наличии
-    """
-    cars = Car.objects.all()
+def list_cars(request, status: str = None):
+    qs = Car.objects.all()
     if status:
-        cars = cars.filter(car_status=status)
-    return cars
+        qs = qs.filter(car_status=status)
+    return qs
+
 
 @api.get("/cars/{vin}", response=CarSchema)
-def get_car_by_vin(request, vin: str):
-    """Получить информацию об одном авто по VIN"""
+def get_car(request, vin: str):
     return get_object_or_404(Car, vin=vin)
 
-@api.post("/cars", response=CarSchema)
-def create_car(request, data: CarSchema):
-    """Добавить новый автомобиль"""
-    # **data.dict() распаковывает JSON в аргументы
-    car = Car.objects.create(**data.dict())
-    return car
-
-# ==========================================
-# 3. ЭНДПОИНТЫ ДЛЯ КЛИЕНТОВ
-# ==========================================
-
-@api.get("/clients", response=List[ClientSchema])
-@paginate
-def get_clients(request, search: Optional[str] = None):
-    """Поиск клиента по ФИО"""
-    clients = Client.objects.all()
-    if search:
-        # icontains = поиск по части слова (нечувствительно к регистру)
-        clients = clients.filter(fio__icontains=search)
-    return clients
 
 @api.post("/clients", response=ClientSchema)
-def create_client(request, data: ClientSchema):
-    client = Client.objects.create(**data.dict())
+def create_client(request, payload: ClientSchema):
+    client = Client.objects.create(**payload.dict())
     return client
 
-# ==========================================
-# 4. ЭНДПОИНТЫ ДЛЯ ПРОДАЖ
-# ==========================================
 
 @api.get("/sales", response=List[SaleSchema])
-@paginate
-def get_sales(request):
-    """
-    Список продаж.
-    Благодаря SaleSchema тут сразу будут видны ФИО сотрудников и клиентов, а не просто ID.
-    select_related ускоряет запрос к БД.
-    """
-    return Sale.objects.select_related('ip_employee', 'passport_client').all()
+def list_sales(request):
+    return Sale.objects.all()
 
-# ==========================================
-# 5. ЭНДПОИНТЫ ДЛЯ СОТРУДНИКОВ
-# ==========================================
 
-@api.get("/employees", response=List[EmployeeSchema])
-def get_employees(request):
-    return Employee.objects.all()
+# Пример сложной логики в API: Тест-драйв
+from datetime import datetime
+from .models import Test_drive
+
+
+class TestDriveCreateSchema(ModelSchema):
+    class Meta:
+        model = Test_drive
+        fields = ['vin', 'passport_client', 'id_employee', 'datetime_reservation']
+
+
+@api.post("/test-drive")
+def create_test_drive(request, payload: TestDriveCreateSchema):
+    # Данные валидируются через .clean() модели при сохранении,
+    # но Django Ninja делает это неявно. Лучше вызвать full_clean()
+    try:
+        data = payload.dict()
+        # Конвертируем ID в объекты, так как payload содержит int/str
+        data['vin'] = get_object_or_404(Car, vin=data['vin'])
+        data['passport_client'] = get_object_or_404(Client, passport_client=data['passport_client'])
+        data['id_employee'] = get_object_or_404(Employee, id_employee=data['id_employee'])
+
+        td = Test_drive(**data)
+        td.full_clean()  # Здесь сработают все наши проверки (возраст, лимиты, статус авто)
+        td.save()
+        return {"id": td.id_test, "status": "created"}
+    except Exception as e:
+        return api.create_response(request, {"error": str(e)}, status=400)
