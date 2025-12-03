@@ -54,18 +54,38 @@ class TestDriveAdmin(ReadOnlyAdminMixin, admin.ModelAdmin):
 
 @admin.register(Car)
 class CarAdmin(admin.ModelAdmin):
-    list_display = ('vin', 'make', 'model', 'car_status', 'price')
+    list_display = ('vin', 'make', 'model', 'car_status', 'price', 'discount')
     list_filter = ('car_status', 'make')
     search_fields = ('vin', 'model')
 
-    # Запрещаем редактировать всё, кроме цены, статуса и скидки
     def get_readonly_fields(self, request, obj=None):
+        """
+        Логика блокировки полей:
+        1. Если машина 'Продан' -> Блокируем ВСЕ поля.
+        2. Если машина в другом статусе -> Блокируем только технические хар-ки (разрешаем менять цену/статус).
+        3. Если создаем новую -> Ничего не блокируем.
+        """
+        # Сценарий 1: Машина уже продана
+        if obj and obj.car_status == 'Продан':
+            # Получаем список вообще всех полей модели и делаем их read-only
+            return [field.name for field in self.model._meta.fields]
+
+        # Сценарий 2: Редактируем непроданную машину (блокируем неизменяемые тех. данные)
         if obj:
             return ('vin', 'make', 'model', 'engine', 'gearbox',
                     'driven_wheels', 'body', 'make_year', 'trim',
                     'addons', 'color', 'date_of_delivery')
+
+        # Сценарий 3: Создание новой машины (всё открыто)
         return ()
 
+    def has_delete_permission(self, request, obj=None):
+        """
+        Запрещаем удалять машину, если она уже продана (для сохранения истории).
+        """
+        if obj and obj.car_status == 'Продан':
+            return False
+        return super().has_delete_permission(request, obj)
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
