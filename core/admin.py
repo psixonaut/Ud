@@ -1,76 +1,56 @@
 from django.contrib import admin
 from django.contrib import messages
-from django.db import IntegrityError, InternalError, transaction, DatabaseError
+from django.db import IntegrityError, InternalError, transaction
+from django.http import HttpResponseRedirect
 from .models import Car, Order, Client, Sale, Sale_list, Employee, Test_drive
 
 
-# --- ЛОВУШКА ОШИБОК (Mixin) ---
 class SafeAdminMixin:
-    """
-    Перехватывает любые ошибки базы данных, не давая сайту упасть (Error 500).
-    Выводит ошибку как красное уведомление.
-    """
-
-    def save_model(self, request, obj, form, change):
-        try:
-            # transaction.atomic() обязателен! Без него ошибка БД ломает соединение
-            # и вызывает TransactionManagementError
-            with transaction.atomic():
-                super().save_model(request, obj, form, change)
-        except Exception as e:
-            self.handle_db_error(request, e)
-
-    def delete_model(self, request, obj):
+    def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         try:
             with transaction.atomic():
-                super().delete_model(request, obj)
+                return super().changeform_view(request, object_id, form_url, extra_context)
         except Exception as e:
             self.handle_db_error(request, e)
+            return HttpResponseRedirect(request.path)
+
+    def delete_view(self, request, object_id, extra_context=None):
+        try:
+            with transaction.atomic():
+                return super().delete_view(request, object_id, extra_context)
+        except Exception as e:
+            self.handle_db_error(request, e)
+            return HttpResponseRedirect(request.path)
 
     def handle_db_error(self, request, exception):
-        """
-        Разбирает текст ошибки и делает его понятным для человека.
-        """
         error_text = str(exception)
-
-        # 1. Ошибка дубликатов (Сбился счетчик ID или уникальное поле)
         if "duplicate key value" in error_text:
-            messages.error(request,
-                           f"⛔ Ошибка уникальности: Запись с таким ID или номером уже существует. (Возможно, сбился счетчик БД, попробуйте создать запись еще раз).")
-
-        # 2. Ошибка пустых полей (NOT NULL)
+            messages.error(request, f"⛔ Ошибка уникальности: Такая запись уже существует (ID/Паспорт/ВУ/VIN).")
         elif "violates not-null constraint" in error_text:
-            messages.error(request, f"⛔ Ошибка: Не заполнено обязательное поле. Проверьте форму.")
-
-        # 3. Ошибки бизнес-логики (Триггеры)
+            messages.error(request, f"⛔ Ошибка: Не заполнено обязательное поле.")
         elif "CONTEXT:" in error_text:
-            # Очищаем технический текст PostgreSQL
             clean_text = error_text.split('CONTEXT:')[0].replace('InternalError:', '').strip()
+            clean_text = clean_text.replace('PL/pgSQL function', '').strip()
             messages.error(request, f"⛔ {clean_text}")
-
-        # 4. Прочие ошибки
         else:
-            messages.error(request, f"⛔ Системная ошибка базы данных: {error_text}")
+            messages.error(request, f"⛔ Ошибка БД: {error_text}")
 
-
-# --- Настройки моделей ---
 
 class SaleListInline(admin.StackedInline):
     model = Sale_list
     extra = 0
     readonly_fields = ('vin', 'discounted_prise')
-
-    def has_delete_permission(self, request, obj=None):
-        return False
+    can_delete = False
 
 
 @admin.register(Sale)
 class SaleAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('id_sale', 'sale_date', 'ip_employee', 'end_price')
     inlines = [SaleListInline]
+    readonly_fields = ('ip_employee', 'passport_client', 'sale_date', 'end_price')
 
     def has_change_permission(self, request, obj=None):
-        return not bool(obj)
+        return not bool(obj)  # Разрешить создание, запретить редактирование
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -84,10 +64,8 @@ class CarAdmin(SafeAdminMixin, admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         if obj and obj.car_status == 'Продан':
-            # Блокируем всё, если продана
             return [field.name for field in self.model._meta.fields]
         if obj:
-            # Блокируем тех. данные при редактировании
             return ('vin', 'make', 'model', 'engine', 'gearbox',
                     'driven_wheels', 'body', 'make_year', 'trim',
                     'addons', 'color', 'date_of_delivery')

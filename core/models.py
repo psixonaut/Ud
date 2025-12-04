@@ -4,7 +4,7 @@ from django.db.models import Q
 from datetime import date
 from django.utils import timezone
 
-# --- Справочники (Важно: С большой буквы, как в базе данных) ---
+# --- Справочники ---
 STATUS_CHOICES = [
     ('Заказан', 'Заказан'),
     ('На заводе', 'На заводе'),
@@ -26,6 +26,7 @@ RANK_CHOICES = [
 # --- Модели ---
 
 class Employee(models.Model):
+    # В базе есть sequence (auto increment), поэтому возвращаем AutoField
     id_employee = models.AutoField(db_column='idСотрудника', primary_key=True)
     fio = models.CharField(db_column='ФИО', max_length=100)
     rank = models.CharField(db_column='Должность', max_length=50, choices=RANK_CHOICES)
@@ -36,7 +37,6 @@ class Employee(models.Model):
     employed = models.IntegerField(db_column='Трудоустроен', default=1)
 
     def clean(self):
-        # Правило: Сотрудник старше 18 лет
         if self.b_date:
             today = date.today()
             age = today.year - self.b_date.year - ((today.month, today.day) < (self.b_date.month, self.b_date.day))
@@ -47,13 +47,14 @@ class Employee(models.Model):
         return f"{self.fio} ({self.rank})"
 
     class Meta:
-        managed = True
+        managed = False  # Django не будет пытаться менять эту таблицу
         db_table = 'Сотрудник'
         verbose_name = 'Сотрудник'
         verbose_name_plural = 'Сотрудники'
 
 
 class Client(models.Model):
+    # В базе это bigint без автоинкремента
     passport_client = models.BigIntegerField(db_column='Паспорт_клиент', primary_key=True)
     fio = models.CharField(db_column='ФИО', max_length=100)
     license_number = models.BigIntegerField(db_column='Номер_ву', unique=True, blank=True, null=True)
@@ -64,15 +65,15 @@ class Client(models.Model):
         return self.fio
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'Клиент'
         verbose_name = 'Клиент'
         verbose_name_plural = 'Клиенты'
 
 
 class Car(models.Model):
+    # В базе это varchar, ключ
     vin = models.CharField(db_column='VIN', primary_key=True, max_length=150)
-    # default='Заказан' с большой буквы
     car_status = models.CharField(db_column='Статус_автомобиля', max_length=100, choices=STATUS_CHOICES,
                                   default='Заказан')
     make = models.CharField(db_column='Марка', max_length=50)
@@ -83,42 +84,31 @@ class Car(models.Model):
     body = models.CharField(db_column='Кузов', max_length=50)
     make_year = models.IntegerField(db_column='Год_производства')
     trim = models.CharField(db_column='Комплектация', max_length=50)
-
-    # ИСПРАВЛЕНО: default='Нет', чтобы не было ошибки NotNullViolation
-    addons = models.CharField(
-        db_column='Дополнительное_оборудование',
-        max_length=200,
-        blank=True,
-        default='Нет'
-    )
-
+    # default='Нет' чтобы обойти NotNull constraint
+    addons = models.CharField(db_column='Дополнительное_оборудование', max_length=200, blank=True, default='Нет')
     color = models.CharField(db_column='Цвет', max_length=50)
     date_of_delivery = models.DateField(db_column='Дата_поступления', blank=True, null=True)
     price = models.IntegerField(db_column='Цена')
     discount = models.IntegerField(db_column='Скидка', blank=True, null=True, default=0)
 
     def clean(self):
-        # Правило: Год выпуска не может быть в будущем
         current_year = date.today().year
         if self.make_year and self.make_year > current_year:
             raise ValidationError(
                 f"Год производства ({self.make_year}) не может быть больше текущего ({current_year}).")
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'Автомобиль'
         verbose_name = 'Автомобиль'
         verbose_name_plural = 'Автомобили'
-        constraints = [
-            models.CheckConstraint(check=Q(price__gt=100000), name='price_gt_100k'),
-            models.CheckConstraint(check=Q(discount__lte=50), name='discount_lte_50'),
-        ]
 
     def __str__(self):
         return f"{self.make} {self.model} ({self.vin})"
 
 
 class Order(models.Model):
+    # В базе есть sequence
     id_order = models.AutoField(db_column='idЗаказа', primary_key=True)
     id_employee = models.ForeignKey(Employee, models.DO_NOTHING, db_column='idСотрудника')
     date_order = models.DateField(db_column='Дата_заказа', auto_now_add=True)
@@ -134,28 +124,23 @@ class Order(models.Model):
     addons = models.CharField(db_column='Дополнительное_оборудование', max_length=200)
     amount = models.IntegerField(db_column='Количество', default=1)
 
-    # expected_delivery = models.DateField(null=True, blank=True)
+    # УБРАЛИ expected_delivery, так как его нет в вашей БД
 
     def clean(self):
-        # Правило: Заказы только для Менеджеров
         if self.id_employee.rank != 'Менеджер':
             raise ValidationError("Оформлять заказы могут только сотрудники с должностью 'Менеджер'.")
-
-        # Правило: Дата поставки
-        # if self.expected_delivery and self.date_order and self.date_order > self.expected_delivery:
-        #     raise ValidationError("Дата заказа должна быть меньше даты поставки.")
-
         if self.amount < 1:
             raise ValidationError("Количество должно быть не менее 1.")
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'Заказ'
         verbose_name = 'Заказ'
         verbose_name_plural = 'Заказы'
 
 
 class Sale(models.Model):
+    # В базе есть sequence
     id_sale = models.AutoField(db_column='idПродажи', primary_key=True)
     ip_employee = models.ForeignKey(Employee, models.DO_NOTHING, db_column='idСотрудника')
     passport_client = models.ForeignKey(Client, models.DO_NOTHING, db_column='Паспорт_клиент')
@@ -166,32 +151,37 @@ class Sale(models.Model):
         return f"Продажа №{self.id_sale}"
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'Продажа'
         verbose_name = 'Продажа'
         verbose_name_plural = 'Продажи'
 
 
 class Sale_list(models.Model):
-    id_sale = models.OneToOneField(Sale, models.DO_NOTHING, db_column='idПродажи', primary_key=True)
-    vin = models.ForeignKey(Car, models.DO_NOTHING, db_column='VIN')
+    # Django требует один PK. Т.к. одна машина продается 1 раз, используем VIN как PK для модели Django.
+    # В базе FK "idПродажи" указывает на "Продажа(idПродажи)"
+    id_sale = models.ForeignKey(Sale, models.DO_NOTHING, db_column='idПродажи')
+
+    # В базе FK "VIN" указывает на "Автомобиль(VIN)" и является частью составного ключа
+    vin = models.OneToOneField(Car, models.DO_NOTHING, db_column='VIN', primary_key=True)
+
     discounted_prise = models.BigIntegerField(db_column='Цена_со_скидкой')
 
     def clean(self):
-        # Правило: Продажа только если статус 'В продаже' (регистрозависимо)
         if self.vin.car_status != 'В продаже':
             raise ValidationError(
                 f"Автомобиль {self.vin.vin} имеет статус '{self.vin.car_status}', продажа невозможна.")
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'Состав_продажи'
-        unique_together = (('id_sale', 'vin'),)
+        # unique_together тут не обязателен для Django, т.к. vin уже PK
         verbose_name = 'Состав продажи'
         verbose_name_plural = 'Состав продаж'
 
 
 class Test_drive(models.Model):
+    # В базе есть sequence
     id_test = models.AutoField(db_column='idТест_драйва', primary_key=True)
     vin = models.ForeignKey(Car, models.DO_NOTHING, db_column='VIN')
     passport_client = models.ForeignKey(Client, models.DO_NOTHING, db_column='Паспорт_клиент')
@@ -200,37 +190,30 @@ class Test_drive(models.Model):
     result = models.CharField(db_column='Итог', max_length=20, blank=True, null=True)
 
     def clean(self):
-        # Правило: Статус машины 'Для тест-драйвов'
         if self.vin.car_status != 'Для тест-драйвов':
             raise ValidationError("Этот автомобиль не предназначен для тест-драйва.")
-
-        # Правило: Возраст клиента >= 21
         if self.passport_client.b_day:
             today = date.today()
             age = today.year - self.passport_client.b_day.year
             if age < 21:
                 raise ValidationError("Клиент должен быть старше 21 года.")
-
-        # Правило: Нельзя менять дату брони меньше чем за 2 дня
         if self.pk:
             old_obj = Test_drive.objects.get(pk=self.pk)
             days_diff = (self.datetime_reservation.date() - date.today()).days
             if old_obj.datetime_reservation != self.datetime_reservation and days_diff < 2:
                 raise ValidationError("Нельзя менять дату бронирования менее чем за 2 дня.")
 
-        # Правило: Лимит сотрудника (5 в день)
         day_start = self.datetime_reservation.replace(hour=0, minute=0, second=0)
         day_end = self.datetime_reservation.replace(hour=23, minute=59, second=59)
         count = Test_drive.objects.filter(
             id_employee=self.id_employee,
             datetime_reservation__range=(day_start, day_end)
         ).exclude(pk=self.pk).count()
-
         if count >= 5:
             raise ValidationError("У этого сотрудника уже 5 тест-драйвов на этот день.")
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'Тест_драйв'
         verbose_name = 'Тест-драйв'
         verbose_name_plural = 'Тест-драйвы'
