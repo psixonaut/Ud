@@ -4,7 +4,7 @@ from django.db.models import Q
 from datetime import date
 from django.utils import timezone
 
-# ВАЖНО: Все статусы с большой буквы, как требует ваша база данных!
+# --- Справочники (Важно: С большой буквы, как в базе данных) ---
 STATUS_CHOICES = [
     ('Заказан', 'Заказан'),
     ('На заводе', 'На заводе'),
@@ -23,6 +23,8 @@ RANK_CHOICES = [
 ]
 
 
+# --- Модели ---
+
 class Employee(models.Model):
     id_employee = models.AutoField(db_column='idСотрудника', primary_key=True)
     fio = models.CharField(db_column='ФИО', max_length=100)
@@ -34,6 +36,7 @@ class Employee(models.Model):
     employed = models.IntegerField(db_column='Трудоустроен', default=1)
 
     def clean(self):
+        # Правило: Сотрудник старше 18 лет
         if self.b_date:
             today = date.today()
             age = today.year - self.b_date.year - ((today.month, today.day) < (self.b_date.month, self.b_date.day))
@@ -41,7 +44,7 @@ class Employee(models.Model):
                 raise ValidationError("Сотрудник должен быть не младше 18 лет.")
 
     def __str__(self):
-        return self.fio
+        return f"{self.fio} ({self.rank})"
 
     class Meta:
         managed = True
@@ -69,6 +72,7 @@ class Client(models.Model):
 
 class Car(models.Model):
     vin = models.CharField(db_column='VIN', primary_key=True, max_length=150)
+    # default='Заказан' с большой буквы
     car_status = models.CharField(db_column='Статус_автомобиля', max_length=100, choices=STATUS_CHOICES,
                                   default='Заказан')
     make = models.CharField(db_column='Марка', max_length=50)
@@ -79,11 +83,26 @@ class Car(models.Model):
     body = models.CharField(db_column='Кузов', max_length=50)
     make_year = models.IntegerField(db_column='Год_производства')
     trim = models.CharField(db_column='Комплектация', max_length=50)
-    addons = models.CharField(db_column='Дополнительное_оборудование', max_length=200, blank=True, null=True)
+
+    # ИСПРАВЛЕНО: default='Нет', чтобы не было ошибки NotNullViolation
+    addons = models.CharField(
+        db_column='Дополнительное_оборудование',
+        max_length=200,
+        blank=True,
+        default='Нет'
+    )
+
     color = models.CharField(db_column='Цвет', max_length=50)
     date_of_delivery = models.DateField(db_column='Дата_поступления', blank=True, null=True)
     price = models.IntegerField(db_column='Цена')
     discount = models.IntegerField(db_column='Скидка', blank=True, null=True, default=0)
+
+    def clean(self):
+        # Правило: Год выпуска не может быть в будущем
+        current_year = date.today().year
+        if self.make_year and self.make_year > current_year:
+            raise ValidationError(
+                f"Год производства ({self.make_year}) не может быть больше текущего ({current_year}).")
 
     class Meta:
         managed = True
@@ -115,13 +134,19 @@ class Order(models.Model):
     addons = models.CharField(db_column='Дополнительное_оборудование', max_length=200)
     amount = models.IntegerField(db_column='Количество', default=1)
 
-    expected_delivery = models.DateField(null=True, blank=True)
+    # expected_delivery = models.DateField(null=True, blank=True)
 
     def clean(self):
+        # Правило: Заказы только для Менеджеров
         if self.id_employee.rank != 'Менеджер':
             raise ValidationError("Оформлять заказы могут только сотрудники с должностью 'Менеджер'.")
-        if self.expected_delivery and self.date_order and self.date_order > self.expected_delivery:
-            raise ValidationError("Дата заказа должна быть меньше даты поставки.")
+
+        # Правило: Дата поставки
+        # if self.expected_delivery and self.date_order and self.date_order > self.expected_delivery:
+        #     raise ValidationError("Дата заказа должна быть меньше даты поставки.")
+
+        if self.amount < 1:
+            raise ValidationError("Количество должно быть не менее 1.")
 
     class Meta:
         managed = True
@@ -153,7 +178,7 @@ class Sale_list(models.Model):
     discounted_prise = models.BigIntegerField(db_column='Цена_со_скидкой')
 
     def clean(self):
-        # Важно: тут статус тоже должен быть с Большой буквы
+        # Правило: Продажа только если статус 'В продаже' (регистрозависимо)
         if self.vin.car_status != 'В продаже':
             raise ValidationError(
                 f"Автомобиль {self.vin.vin} имеет статус '{self.vin.car_status}', продажа невозможна.")
@@ -175,22 +200,25 @@ class Test_drive(models.Model):
     result = models.CharField(db_column='Итог', max_length=20, blank=True, null=True)
 
     def clean(self):
-        # Статус с большой буквы
+        # Правило: Статус машины 'Для тест-драйвов'
         if self.vin.car_status != 'Для тест-драйвов':
             raise ValidationError("Этот автомобиль не предназначен для тест-драйва.")
 
+        # Правило: Возраст клиента >= 21
         if self.passport_client.b_day:
             today = date.today()
             age = today.year - self.passport_client.b_day.year
             if age < 21:
                 raise ValidationError("Клиент должен быть старше 21 года.")
 
+        # Правило: Нельзя менять дату брони меньше чем за 2 дня
         if self.pk:
             old_obj = Test_drive.objects.get(pk=self.pk)
             days_diff = (self.datetime_reservation.date() - date.today()).days
             if old_obj.datetime_reservation != self.datetime_reservation and days_diff < 2:
                 raise ValidationError("Нельзя менять дату бронирования менее чем за 2 дня.")
 
+        # Правило: Лимит сотрудника (5 в день)
         day_start = self.datetime_reservation.replace(hour=0, minute=0, second=0)
         day_end = self.datetime_reservation.replace(hour=23, minute=59, second=59)
         count = Test_drive.objects.filter(
