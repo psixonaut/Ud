@@ -4,10 +4,8 @@ from django.db.models import Q
 from datetime import date
 from django.utils import timezone
 
-# --- СПРАВОЧНИКИ ---
+# --- СПРАВОЧНИКИ (Строго по Check Constraint БД) ---
 STATUS_CHOICES = [
-    ('Заказан', 'Заказан'),
-    # 'На заводе' - УБРАНО ПО ТРЕБОВАНИЮ
     ('В пути', 'В пути'),
     ('Прибыл', 'Прибыл'),
     ('В продаже', 'В продаже'),
@@ -15,9 +13,8 @@ STATUS_CHOICES = [
     ('Продан', 'Продан'),
 ]
 
+# Синхронизируем статусы заказа с доступными статусами авто
 ORDER_STATUS_CHOICES = [
-    ('Заказан', 'Заказан'),
-    # 'На заводе' - УБРАНО ДЛЯ СИНХРОНИЗАЦИИ
     ('В пути', 'В пути'),
     ('Прибыл', 'Прибыл'),
     ('Продан', 'Продан'),
@@ -48,8 +45,7 @@ RANK_CHOICES = [
     ('Менеджер', 'Менеджер'),
     ('Продавец-консультант', 'Продавец-консультант'),
     ('Специалист по закупкам', 'Специалист по закупкам'),
-    ('Сотрудник приёма и предпродажной подготовки', 'Сотрудник приёма и предпродажной подготовки'),
-]
+    ('Сотрудник приёма и предпродажной подготовки', 'Сотрудник приёма и предпродажной подготовки')]
 
 # --- МОДЕЛИ ---
 
@@ -86,7 +82,8 @@ class Client(models.Model):
 
 class Car(models.Model):
     vin = models.CharField(db_column='VIN', primary_key=True, max_length=150)
-    car_status = models.CharField(db_column='Статус_автомобиля', max_length=100, choices=STATUS_CHOICES, default='Заказан')
+    # ИЗМЕНЕНО: default='В пути' (так как 'Заказан' больше нельзя)
+    car_status = models.CharField(db_column='Статус_автомобиля', max_length=100, choices=STATUS_CHOICES, default='В пути')
     make = models.CharField(db_column='Марка', max_length=50)
     model = models.CharField(db_column='Модель', max_length=50)
     engine = models.CharField(db_column='Двигатель', max_length=50)
@@ -124,7 +121,8 @@ class Order(models.Model):
     id_order = models.AutoField(db_column='idЗаказа', primary_key=True)
     id_employee = models.ForeignKey(Employee, models.DO_NOTHING, db_column='idСотрудника')
     date_order = models.DateField(db_column='Дата_заказа', auto_now_add=True)
-    state_order = models.CharField(db_column='Статус_заказа', max_length=100, choices=ORDER_STATUS_CHOICES, default='Заказан')
+    # ИЗМЕНЕНО: default='В пути'
+    state_order = models.CharField(db_column='Статус_заказа', max_length=100, choices=ORDER_STATUS_CHOICES, default='В пути')
     make = models.CharField(db_column='Марка', max_length=50)
     model = models.CharField(db_column='Модель', max_length=50)
     engine = models.CharField(db_column='Двигатель', max_length=50)
