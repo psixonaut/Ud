@@ -57,6 +57,10 @@ DATABASES = {
     }
 }
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -68,5 +72,5 @@ LANGUAGE_CODE = 'ru-ru' # <-- Русский язык в админке
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

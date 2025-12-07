@@ -40,10 +40,13 @@ class SafeAdminMixin:
 
 
 # --- ПРОДАЖА ---
+# core/admin.py
+
 class SaleListInline(admin.StackedInline):
     model = Sale_list
     extra = 1
-    # Цена в составе продажи тоже изменяемая (как мы делали в прошлом шаге)
+    max_num = 1  # <--- Максимум 1 машина
+    min_num = 1  # <--- Минимум 1 машина (обязательно)
     readonly_fields = ()
 
     def has_delete_permission(self, request, obj=None):
@@ -62,6 +65,9 @@ class SaleListInline(admin.StackedInline):
 class SaleAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('id_sale', 'sale_date', 'ip_employee', 'end_price')
     inlines = [SaleListInline]
+
+    class Media:
+        js = ('js/admin_auto_price.js',)
 
     # ИЗМЕНЕНИЕ: Убрали 'end_price' отсюда. Теперь поле доступно для ввода.
     # Если продажа уже создана - блокируем всё.

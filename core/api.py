@@ -11,7 +11,8 @@ api = NinjaAPI(title="Auto Shop CRM API")
 class CarSchema(ModelSchema):
     class Meta:
         model = Car
-        fields = "__all__"
+        # Нам обязательно нужны price и discount
+        fields = ['vin', 'price', 'discount']
 
 
 class ClientSchema(ModelSchema):
