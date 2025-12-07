@@ -5,6 +5,8 @@ from django.db import IntegrityError, InternalError, transaction
 from django.http import HttpResponseRedirect
 from .models import Car, Order, Client, Sale, Sale_list, Employee, Test_drive, STATUS_CHOICES
 
+
+# --- ЛОВУШКА ОШИБОК ---
 class SafeAdminMixin:
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         try:
@@ -36,29 +38,50 @@ class SafeAdminMixin:
         else:
             messages.error(request, f"⛔ Ошибка БД: {error_text}")
 
+
+# --- ПРОДАЖА ---
 class SaleListInline(admin.StackedInline):
     model = Sale_list
     extra = 1
+    # Цена в составе продажи тоже изменяемая (как мы делали в прошлом шаге)
     readonly_fields = ()
-    def has_delete_permission(self, request, obj=None): return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
     def has_change_permission(self, request, obj=None):
         if obj: return False
         return True
+
     def has_add_permission(self, request, obj=None):
         if obj: return False
         return True
+
 
 @admin.register(Sale)
 class SaleAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('id_sale', 'sale_date', 'ip_employee', 'end_price')
     inlines = [SaleListInline]
-    readonly_fields = ('end_price',)
-    def has_add_permission(self, request): return True
+
+    # ИЗМЕНЕНИЕ: Убрали 'end_price' отсюда. Теперь поле доступно для ввода.
+    # Если продажа уже создана - блокируем всё.
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # Если просмотр существующей
+            return ('ip_employee', 'passport_client', 'sale_date', 'end_price')
+        return ()  # Если создание новой - всё открыто
+
+    def has_add_permission(self, request):
+        return True
+
     def has_change_permission(self, request, obj=None):
         if obj: return False
         return True
-    def has_delete_permission(self, request, obj=None): return False
 
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+# --- АВТОМОБИЛЬ ---
 @admin.register(Car)
 class CarAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('vin', 'make', 'model', 'car_status', 'price', 'discount')
@@ -86,27 +109,35 @@ class CarAdmin(SafeAdminMixin, admin.ModelAdmin):
         if obj and obj.car_status == 'Продан': return False
         return super().has_delete_permission(request, obj)
 
+
+# --- ОСТАЛЬНЫЕ ---
 @admin.register(Order)
 class OrderAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('make', 'model', 'state_order', 'date_order', 'amount')
     list_filter = ('state_order', 'date_order')
 
+
 @admin.register(Client)
 class ClientAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('fio', 'phone_number', 'license_number')
+
 
 @admin.register(Employee)
 class EmployeeAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('fio', 'rank', 'phone_number')
 
+
 @admin.register(Test_drive)
 class TestDriveAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('id_test', 'datetime_reservation', 'vin', 'id_employee')
     list_filter = ('datetime_reservation', 'result')
+
     def has_change_permission(self, request, obj=None):
         if obj: return False
         return True
+
     def has_delete_permission(self, request, obj=None): return False
+
 
 try:
     admin.site.unregister(User)

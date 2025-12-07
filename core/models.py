@@ -82,8 +82,8 @@ class Client(models.Model):
 
 class Car(models.Model):
     vin = models.CharField(db_column='VIN', primary_key=True, max_length=150)
-    # ИЗМЕНЕНО: default='В пути' (так как 'Заказан' больше нельзя)
-    car_status = models.CharField(db_column='Статус_автомобиля', max_length=100, choices=STATUS_CHOICES, default='В пути')
+    car_status = models.CharField(db_column='Статус_автомобиля', max_length=100, choices=STATUS_CHOICES,
+                                  default='В пути')
     make = models.CharField(db_column='Марка', max_length=50)
     model = models.CharField(db_column='Модель', max_length=50)
     engine = models.CharField(db_column='Двигатель', max_length=50)
@@ -100,21 +100,38 @@ class Car(models.Model):
 
     def clean(self):
         current_year = date.today().year
+
+        # 1. Проверка на будущее
         if self.make_year and self.make_year > current_year:
-            raise ValidationError(f"Год производства ({self.make_year}) не может быть больше текущего ({current_year}).")
+            raise ValidationError(
+                f"Год производства ({self.make_year}) не может быть больше текущего ({current_year}).")
+
+        # 2. НОВАЯ ПРОВЕРКА: Не меньше 1900
+        if self.make_year and self.make_year < 1900:
+            raise ValidationError(f"Год производства ({self.make_year}) не может быть меньше 1900 года.")
+
+        # 3. Проверка скидки
         if self.discount and self.discount > 50:
             raise ValidationError("Скидка не может превышать 50%.")
+
+        # 4. Проверка цены
         if self.price and self.discount is not None:
             final_price = self.price * (1 - self.discount / 100)
             if final_price < 100000:
                 raise ValidationError(f"Цена со скидкой ({int(final_price)}) не может быть меньше 100,000 руб.")
+
+        # 5. Проверка ручного статуса
         if self.pk and self.car_status == 'Продан':
             is_sold_officially = Sale_list.objects.filter(vin=self.pk).exists()
             if not is_sold_officially:
-                raise ValidationError("Нельзя вручную установить статус 'Продан'. Оформите продажу через меню 'Продажи'.")
+                raise ValidationError(
+                    "Нельзя вручную установить статус 'Продан'. Оформите продажу через меню 'Продажи'.")
 
-    class Meta: managed = False; db_table = 'Автомобиль'; verbose_name = 'Автомобиль'; verbose_name_plural = 'Автомобили'
-    def __str__(self): return f"{self.make} {self.model} ({self.vin})"
+    class Meta:
+        managed = False; db_table = 'Автомобиль'; verbose_name = 'Автомобиль'; verbose_name_plural = 'Автомобили'
+
+    def __str__(self):
+        return f"{self.make} {self.model} ({self.vin})"
 
 
 class Order(models.Model):
@@ -135,21 +152,47 @@ class Order(models.Model):
     amount = models.IntegerField(db_column='Количество', default=1)
 
     def clean(self):
-        if self.id_employee.rank != 'Менеджер': raise ValidationError("Оформлять заказы могут только сотрудники с должностью 'Менеджер'.")
-        if self.amount < 1: raise ValidationError("Количество должно быть не менее 1.")
+        # ИЗМЕНЕНИЕ: Проверяем на 'Специалист по закупкам' вместо 'Менеджер'
+        if self.id_employee.rank != 'Специалист по закупкам':
+            raise ValidationError("Оформлять заказы могут только сотрудники с должностью 'Специалист по закупкам'.")
 
-    class Meta: managed = False; db_table = 'Заказ'; verbose_name = 'Заказ'; verbose_name_plural = 'Заказы'
+        if self.amount < 1:
+            raise ValidationError("Количество должно быть не менее 1.")
+
+    class Meta:
+        managed = False; db_table = 'Заказ'; verbose_name = 'Заказ'; verbose_name_plural = 'Заказы'
 
 
 class Sale(models.Model):
     id_sale = models.AutoField(db_column='idПродажи', primary_key=True)
-    ip_employee = models.ForeignKey(Employee, models.DO_NOTHING, db_column='idСотрудника')
+
+    # ИЗМЕНЕНИЕ: Добавлен limit_choices_to
+    ip_employee = models.ForeignKey(
+        Employee,
+        models.DO_NOTHING,
+        db_column='idСотрудника',
+        limit_choices_to={'rank__in': ['Менеджер', 'Продавец-консультант']}
+    )
+
     passport_client = models.ForeignKey(Client, models.DO_NOTHING, db_column='Паспорт_клиент')
     sale_date = models.DateField(db_column='Дата_продажи', default=timezone.now)
     end_price = models.BigIntegerField(db_column='Итоговая_сумма', default=0)
 
-    def __str__(self): return f"Продажа №{self.id_sale}"
-    class Meta: managed = False; db_table = 'Продажа'; verbose_name = 'Продажа'; verbose_name_plural = 'Продажи'
+    def clean(self):
+        # ИЗМЕНЕНИЕ: Проверка должности сотрудника
+        allowed_ranks = ['Менеджер', 'Продавец-консультант']
+        if self.ip_employee.rank not in allowed_ranks:
+            raise ValidationError(
+                f"Сотрудник {self.ip_employee.fio} (должность: {self.ip_employee.rank}) не имеет права оформлять продажи.")
+
+    def __str__(self):
+        return f"Продажа №{self.id_sale}"
+
+    class Meta:
+        managed = False
+        db_table = 'Продажа'
+        verbose_name = 'Продажа'
+        verbose_name_plural = 'Продажи'
 
 
 class Sale_list(models.Model):
@@ -175,28 +218,84 @@ class Sale_list(models.Model):
 
 class Test_drive(models.Model):
     id_test = models.AutoField(db_column='idТест_драйва', primary_key=True)
-    vin = models.ForeignKey(Car, models.DO_NOTHING, db_column='VIN', limit_choices_to={'car_status': 'Для тест-драйвов'}, blank=False, null=False)
-    passport_client = models.ForeignKey(Client, models.DO_NOTHING, db_column='Паспорт_клиент', limit_choices_to={'license_number__isnull': False}, blank=False, null=False)
-    id_employee = models.ForeignKey(Employee, models.DO_NOTHING, db_column='idСотрудника', limit_choices_to={'license_number__isnull': False}, blank=False, null=False)
+
+    vin = models.ForeignKey(
+        Car,
+        models.DO_NOTHING,
+        db_column='VIN',
+        limit_choices_to={'car_status': 'Для тест-драйвов'},
+        blank=False,
+        null=False
+    )
+
+    passport_client = models.ForeignKey(
+        Client,
+        models.DO_NOTHING,
+        db_column='Паспорт_клиент',
+        limit_choices_to={'license_number__isnull': False},
+        blank=False,
+        null=False
+    )
+
+    # ИЗМЕНЕНИЕ ЗДЕСЬ: Фильтр по правам И по должности
+    id_employee = models.ForeignKey(
+        Employee,
+        models.DO_NOTHING,
+        db_column='idСотрудника',
+        limit_choices_to={
+            'license_number__isnull': False,
+            'rank__in': ['Менеджер', 'Продавец-консультант']
+        },
+        blank=False,
+        null=False
+    )
+
     datetime_reservation = models.DateTimeField(db_column='ДатаВремя_брони', blank=False, null=False)
-    result = models.CharField(db_column='Итог', max_length=20, choices=TEST_RESULT_CHOICES, default='Ожидается', blank=False, null=False)
+    result = models.CharField(db_column='Итог', max_length=20, choices=TEST_RESULT_CHOICES, default='Ожидается',
+                              blank=False, null=False)
 
     def clean(self):
-        if hasattr(self, 'passport_client') and not self.passport_client.license_number: raise ValidationError(f"У клиента {self.passport_client.fio} отсутствуют права.")
-        if hasattr(self, 'id_employee') and not self.id_employee.license_number: raise ValidationError(f"Сотрудник {self.id_employee.fio} не имеет прав.")
-        if hasattr(self, 'vin') and self.vin.car_status != 'Для тест-драйвов': raise ValidationError("Этот автомобиль не предназначен для тест-драйва.")
-        if hasattr(self, 'passport_client') and self.passport_client.b_day:
-            today = date.today()
-            age = today.year - self.passport_client.b_day.year - ((today.month, today.day) < (self.passport_client.b_day.month, self.passport_client.b_day.day))
-            if age < 21: raise ValidationError("Клиент должен быть старше 21 года.")
+        # 1. Проверка прав сотрудника
+        if hasattr(self, 'id_employee'):
+            if not self.id_employee.license_number:
+                raise ValidationError(f"Сотрудник {self.id_employee.fio} не имеет прав.")
+
+            # 2. НОВАЯ ПРОВЕРКА: Проверка должности
+            allowed_ranks = ['Менеджер', 'Продавец-консультант']
+            if self.id_employee.rank not in allowed_ranks:
+                raise ValidationError(
+                    f"Сотрудник {self.id_employee.fio} (должность: {self.id_employee.rank}) не имеет права проводить тест-драйвы.")
+
+        # Проверка клиента
+        if hasattr(self, 'passport_client'):
+            if not self.passport_client.license_number:
+                raise ValidationError(f"У клиента {self.passport_client.fio} отсутствуют права.")
+            if self.passport_client.b_day:
+                today = date.today()
+                age = today.year - self.passport_client.b_day.year - (
+                            (today.month, today.day) < (self.passport_client.b_day.month,
+                                                        self.passport_client.b_day.day))
+                if age < 21: raise ValidationError("Клиент должен быть старше 21 года.")
+
+        # Проверка статуса авто
+        if hasattr(self, 'vin') and self.vin.car_status != 'Для тест-драйвов':
+            raise ValidationError("Этот автомобиль не предназначен для тест-драйва.")
+
+        # Проверка изменения даты
         if self.pk:
             old_obj = Test_drive.objects.get(pk=self.pk)
             days_diff = (self.datetime_reservation.date() - date.today()).days
-            if old_obj.datetime_reservation != self.datetime_reservation and days_diff < 2: raise ValidationError("Нельзя менять дату бронирования менее чем за 2 дня.")
+            if old_obj.datetime_reservation != self.datetime_reservation and days_diff < 2:
+                raise ValidationError("Нельзя менять дату бронирования менее чем за 2 дня.")
+
+        # Проверка лимита (5 в день)
         if self.datetime_reservation and hasattr(self, 'id_employee'):
             day_start = self.datetime_reservation.replace(hour=0, minute=0, second=0)
             day_end = self.datetime_reservation.replace(hour=23, minute=59, second=59)
-            count = Test_drive.objects.filter(id_employee=self.id_employee, datetime_reservation__range=(day_start, day_end)).exclude(pk=self.pk).count()
+            count = Test_drive.objects.filter(id_employee=self.id_employee,
+                                              datetime_reservation__range=(day_start, day_end)).exclude(
+                pk=self.pk).count()
             if count >= 5: raise ValidationError("У этого сотрудника уже 5 тест-драйвов на этот день.")
 
-    class Meta: managed = False; db_table = 'Тест_драйв'; verbose_name = 'Тест-драйв'; verbose_name_plural = 'Тест-драйвы'
+    class Meta:
+        managed = False; db_table = 'Тест_драйв'; verbose_name = 'Тест-драйв'; verbose_name_plural = 'Тест-драйвы'
