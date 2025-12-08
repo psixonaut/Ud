@@ -6,7 +6,7 @@ from django.http import HttpResponseRedirect
 from .models import Car, Order, Client, Sale, Sale_list, Employee, Test_drive, STATUS_CHOICES
 
 
-# --- ЛОВУШКА ОШИБОК ---
+
 class SafeAdminMixin:
     def changeform_view(self, request, object_id=None, form_url='', extra_context=None):
         try:
@@ -39,14 +39,12 @@ class SafeAdminMixin:
             messages.error(request, f"⛔ Ошибка БД: {error_text}")
 
 
-# --- ПРОДАЖА ---
-# core/admin.py
 
 class SaleListInline(admin.StackedInline):
     model = Sale_list
     extra = 1
-    max_num = 1  # <--- Максимум 1 машина
-    min_num = 1  # <--- Минимум 1 машина (обязательно)
+    max_num = 1
+    min_num = 1
     readonly_fields = ()
 
     def has_delete_permission(self, request, obj=None):
@@ -69,12 +67,11 @@ class SaleAdmin(SafeAdminMixin, admin.ModelAdmin):
     class Media:
         js = ('js/admin_auto_price.js',)
 
-    # ИЗМЕНЕНИЕ: Убрали 'end_price' отсюда. Теперь поле доступно для ввода.
-    # Если продажа уже создана - блокируем всё.
+
     def get_readonly_fields(self, request, obj=None):
-        if obj:  # Если просмотр существующей
+        if obj:
             return ('ip_employee', 'passport_client', 'sale_date', 'end_price')
-        return ()  # Если создание новой - всё открыто
+        return ()
 
     def has_add_permission(self, request):
         return True
@@ -87,7 +84,7 @@ class SaleAdmin(SafeAdminMixin, admin.ModelAdmin):
         return False
 
 
-# --- АВТОМОБИЛЬ ---
+
 @admin.register(Car)
 class CarAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('vin', 'make', 'model', 'car_status', 'price', 'discount')
@@ -116,7 +113,7 @@ class CarAdmin(SafeAdminMixin, admin.ModelAdmin):
         return super().has_delete_permission(request, obj)
 
 
-# --- ОСТАЛЬНЫЕ ---
+
 @admin.register(Order)
 class OrderAdmin(SafeAdminMixin, admin.ModelAdmin):
     list_display = ('make', 'model', 'state_order', 'date_order', 'amount')
@@ -150,3 +147,7 @@ try:
     admin.site.unregister(Group)
 except admin.sites.NotRegistered:
     pass
+
+admin.site.site_header = "Автосалон"
+admin.site.index_title = "База данных автосалона"
+admin.site.site_title = "Автосалон"

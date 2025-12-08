@@ -137,9 +137,13 @@ class Car(models.Model):
 class Order(models.Model):
     id_order = models.AutoField(db_column='idЗаказа', primary_key=True)
     id_employee = models.ForeignKey(Employee, models.DO_NOTHING, db_column='idСотрудника')
-    date_order = models.DateField(db_column='Дата_заказа', auto_now_add=True)
-    # ИЗМЕНЕНО: default='В пути'
-    state_order = models.CharField(db_column='Статус_заказа', max_length=100, choices=ORDER_STATUS_CHOICES, default='В пути')
+
+    # ИЗМЕНЕНИЕ 1: Заменили auto_now_add=True на default=timezone.now
+    # Теперь дату можно менять, и мы можем её проверять
+    date_order = models.DateField(db_column='Дата_заказа', default=timezone.now)
+
+    state_order = models.CharField(db_column='Статус_заказа', max_length=100, choices=ORDER_STATUS_CHOICES,
+                                   default='В пути')
     make = models.CharField(db_column='Марка', max_length=50)
     model = models.CharField(db_column='Модель', max_length=50)
     engine = models.CharField(db_column='Двигатель', max_length=50)
@@ -152,12 +156,17 @@ class Order(models.Model):
     amount = models.IntegerField(db_column='Количество', default=1)
 
     def clean(self):
-        # ИЗМЕНЕНИЕ: Проверяем на 'Специалист по закупкам' вместо 'Менеджер'
+        # Проверка должности
         if self.id_employee.rank != 'Специалист по закупкам':
             raise ValidationError("Оформлять заказы могут только сотрудники с должностью 'Специалист по закупкам'.")
 
+        # Проверка количества
         if self.amount < 1:
             raise ValidationError("Количество должно быть не менее 1.")
+
+        # ИЗМЕНЕНИЕ 2: Проверка на дату заказа (нельзя из будущего)
+        if self.date_order > date.today():
+            raise ValidationError("Дата заказа не может быть в будущем.")
 
     class Meta:
         managed = False; db_table = 'Заказ'; verbose_name = 'Заказ'; verbose_name_plural = 'Заказы'
