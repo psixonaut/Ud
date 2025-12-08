@@ -293,8 +293,7 @@ class Test_drive(models.Model):
             day_start = self.datetime_reservation.replace(hour=0, minute=0, second=0)
             day_end = self.datetime_reservation.replace(hour=23, minute=59, second=59)
             count = Test_drive.objects.filter(id_employee=self.id_employee,
-                                              datetime_reservation__range=(day_start, day_end)).exclude(
-                pk=self.pk).count()
+                                              datetime_reservation__range=(day_start, day_end)).exclude(pk=self.pk).count()
             if count >= 5: raise ValidationError("У этого сотрудника уже 5 тест-драйвов на этот день.")
 
     class Meta:
