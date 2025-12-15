@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🏁 Расписание Тест-драйвов</h2>
+    {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' %}
+        <a href="{% url 'create_test_drive' %}" class="btn btn-success">+ Записать клиента</a>
+    {% endif %}
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Дата и Время</th>
+                <th>Автомобиль</th>
+                <th>Клиент</th>
+                <th>Сотрудник</th>
+                <th>Итог</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for td in tds %}
+            <tr>
+                <td><strong>{{ td.datetime_reservation|date:"d.m.Y H:i" }}</strong></td>
+                <td>{{ td.vin.make }} {{ td.vin.model }}</td>
+                <td>{{ td.passport_client.fio }}</td>
+                <td>{{ td.id_employee.fio }}</td>
+                <td>
+                    {% if td.result == 'Ожидается' %}
+                        <span class="badge bg-info text-dark">{{ td.result }}</span>
+                    {% elif td.result == 'Купил' %}
+                        <span class="badge bg-success">{{ td.result }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ td.result }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">Записей нет.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

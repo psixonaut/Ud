@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🚙 Автомобили в наличии</h2>
+</div>
+
+<!-- Фильтр -->
+<div class="card mb-4 bg-light">
+    <div class="card-body py-2">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label class="col-form-label">Фильтр по статусу:</label>
+            </div>
+            <div class="col-auto">
+                <select name="status" class="form-select">
+                    <option value="">Все</option>
+                    <option value="В продаже" {% if request.GET.status == 'В продаже' %}selected{% endif %}>В продаже</option>
+                    <option value="В пути" {% if request.GET.status == 'В пути' %}selected{% endif %}>В пути</option>
+                    <option value="Для тест-драйвов" {% if request.GET.status == 'Для тест-драйвов' %}selected{% endif %}>Для тест-драйвов</option>
+                    <option value="Продан" {% if request.GET.status == 'Продан' %}selected{% endif %}>Продан</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Применить</button>
+                <a href="{% url 'car_list' %}" class="btn btn-outline-secondary">Сброс</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Таблица -->
+<div class="table-responsive">
+    <table class="table table-hover table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>VIN</th>
+                <th>Марка / Модель</th>
+                <th>Характеристики</th>
+                <th>Цена</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for car in cars %}
+            <tr>
+                <td><small>{{ car.vin }}</small></td>
+                <td><strong>{{ car.make }} {{ car.model }}</strong><br><small class="text-muted">{{ car.year }}</small></td>
+                <td>{{ car.engine }}, {{ car.gearbox }}, {{ car.drive }}</td>
+                <td>{{ car.price }} ₽</td>
+                <td>
+                    <span class="badge {% if car.car_status == 'В продаже' %}bg-success{% elif car.car_status == 'Продан' %}bg-secondary{% else %}bg-warning{% endif %}">
+                        {{ car.car_status }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">Автомобили не найдены.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

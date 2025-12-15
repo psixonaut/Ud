@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2>👋 Добрый день, {{ user.employee_profile.fio }}</h2>
+        <p class="text-muted">Ваша роль: <strong>{{ user.employee_profile.rank }}</strong></p>
+    </div>
+</div>
+
+<!-- БЛОК СТАТИСТИКИ -->
+<!-- Показываем только Менеджерам и Закупщикам -->
+{% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Специалист по закупкам' %}
+<div class="row mb-5">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3 h-100 shadow-sm">
+            <div class="card-header">Продаж всего</div>
+            <div class="card-body">
+                <h1 class="card-title">{{ sales_count|default:"0" }}</h1>
+                <p class="card-text">Закрытых сделок</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3 h-100 shadow-sm">
+            <div class="card-header">Выручка</div>
+            <div class="card-body">
+                <h1 class="card-title">{{ total_revenue|default:"0" }} ₽</h1>
+                <p class="card-text">Общая сумма продаж</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3 h-100 shadow-sm">
+            <div class="card-header text-dark">Авто в наличии</div>
+            <div class="card-body text-dark">
+                <h1 class="card-title">{{ cars_in_stock|default:"0" }}</h1>
+                <p class="card-text">Доступно для продажи</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- БЛОК МЕНЮ (КНОПКИ) -->
+<h4 class="mb-3">Доступные действия</h4>
+<div class="row g-4">
+    
+    <!-- 1. АВТОМОБИЛИ (Видят все) -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'car_list' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm hover-effect border-primary">
+                <div class="card-body text-center">
+                    <h1 class="display-4">🚙</h1>
+                    <h5 class="card-title mt-2">Автомобили</h5>
+                    <p class="text-muted small">Поиск и просмотр наличия</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- 2. ТЕСТ-ДРАЙВЫ (Видят все, но функционал ограничен внутри) -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'test_drive_list' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm hover-effect border-secondary">
+                <div class="card-body text-center">
+                    <h1 class="display-4">🏁</h1>
+                    <h5 class="card-title mt-2">Тест-драйвы</h5>
+                    <p class="text-muted small">Расписание и запись</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- 3. ЗАКАЗЫ (Только Закупщик) -->
+    {% if user.employee_profile.rank == 'Специалист по закупкам' %}
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'order_list' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm hover-effect border-info">
+                <div class="card-body text-center">
+                    <h1 class="display-4">📦</h1>
+                    <h5 class="card-title mt-2">Заказы и Поставки</h5>
+                    <p class="text-muted small">Управление поставками авто</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 4. ПРОДАЖА И КЛИЕНТЫ (Менеджер и Продавец) -->
+    {% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Продавец-консультант' %}
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'create_sale' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm hover-effect border-success">
+                <div class="card-body text-center">
+                    <h1 class="display-4">💰</h1>
+                    <h5 class="card-title mt-2">Оформить продажу</h5>
+                    <p class="text-muted small">Новая сделка</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <!-- Добавил кнопку КЛИЕНТЫ (требование ТЗ) -->
+    <!-- В urls.py пока нет отдельного списка клиентов, можно временно вести на создание продажи или добавить view -->
+    <!-- Для MVP пока оставим неактивной или вести на главную -->
+    {% endif %}
+
+    <!-- 5. ПЕРСОНАЛ (Только Менеджер) -->
+    {% if user.employee_profile.rank == 'Менеджер' %}
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'employee_list' %}" class="text-decoration-none">
+            <div class="card h-100 shadow-sm hover-effect border-dark">
+                <div class="card-body text-center">
+                    <h1 class="display-4">👥</h1>
+                    <h5 class="card-title mt-2">Персонал</h5>
+                    <p class="text-muted small">Управление сотрудниками</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    /* Небольшой эффект при наведении для красоты */
+    .hover-effect { transition: transform 0.2s; }
+    .hover-effect:hover { transform: translateY(-5px); background-color: #f8f9fa; }
+</style>
+{% endblock %}

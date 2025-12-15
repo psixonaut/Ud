@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">⚠ Увольнение сотрудника</h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ target.fio }}</h5>
+                <p class="card-text text-muted">{{ target.rank }}</p>
+                
+                <hr>
+                
+                {% if count > 0 %}
+                    <div class="alert alert-warning">
+                        У этого сотрудника запланировано <strong>{{ count }}</strong> тест-драйвов.<br>
+                        Необходимо выбрать преемника для передачи дел.
+                    </div>
+                {% else %}
+                    <div class="alert alert-success">
+                        Активных задач нет. Можно увольнять без передачи дел.
+                    </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    {% if count > 0 %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">{{ form.new_employee.label }}</label>
+                            {{ form.new_employee }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger">Подтвердить увольнение</button>
+                        <a href="{% url 'employee_list' %}" class="btn btn-light">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
