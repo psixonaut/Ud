@@ -51,8 +51,8 @@ DATABASES = {
 'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'auto_dealer',      # Имя базы данных
         'USER': 'admin',      # Логин
-        'PASSWORD': '6C1Qvp0hrZ1Q',  # Пароль
-        'HOST': '185.95.159.83',     # Или IP сервера
+        'PASSWORD': 'QSTby7lqg4fQ',  # Пароль
+        'HOST': '77.110.124.231',     # Или IP сервера
         'PORT': '5432',
     }
 }
