@@ -2,64 +2,130 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>🚙 Автомобили в наличии</h2>
-</div>
-
-<!-- Фильтр -->
-<div class="card mb-4 bg-light">
-    <div class="card-body py-2">
-        <form method="get" class="row g-3 align-items-center">
-            <div class="col-auto">
-                <label class="col-form-label">Фильтр по статусу:</label>
-            </div>
-            <div class="col-auto">
-                <select name="status" class="form-select">
-                    <option value="">Все</option>
-                    <option value="В продаже" {% if request.GET.status == 'В продаже' %}selected{% endif %}>В продаже</option>
-                    <option value="В пути" {% if request.GET.status == 'В пути' %}selected{% endif %}>В пути</option>
-                    <option value="Для тест-драйвов" {% if request.GET.status == 'Для тест-драйвов' %}selected{% endif %}>Для тест-драйвов</option>
-                    <option value="Продан" {% if request.GET.status == 'Продан' %}selected{% endif %}>Продан</option>
-                </select>
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-primary">Применить</button>
-                <a href="{% url 'car_list' %}" class="btn btn-outline-secondary">Сброс</a>
-            </div>
-        </form>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
+        <h2>🚙 Автомобили в наличии</h2>
     </div>
 </div>
 
-<!-- Таблица -->
-<div class="table-responsive">
-    <table class="table table-hover table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>VIN</th>
-                <th>Марка / Модель</th>
-                <th>Характеристики</th>
-                <th>Цена</th>
-                <th>Статус</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for car in cars %}
-            <tr>
-                <td><small>{{ car.vin }}</small></td>
-                <td><strong>{{ car.make }} {{ car.model }}</strong><br><small class="text-muted">{{ car.year }}</small></td>
-                <td>{{ car.engine }}, {{ car.gearbox }}, {{ car.drive }}</td>
-                <td>{{ car.price }} ₽</td>
-                <td>
-                    <span class="badge {% if car.car_status == 'В продаже' %}bg-success{% elif car.car_status == 'Продан' %}bg-secondary{% else %}bg-warning{% endif %}">
-                        {{ car.car_status }}
-                    </span>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" class="text-center">Автомобили не найдены.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="row">
+    <!-- БОКОВАЯ ПАНЕЛЬ ФИЛЬТРОВ -->
+    <div class="col-md-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">Фильтры</div>
+            <div class="card-body">
+                <form method="get">
+                    <!-- Поиск -->
+                    <div class="mb-3">
+                        {{ form.search.label_tag }}
+                        {{ form.search }}
+                    </div>
+
+                    <!-- Статус и Сортировка -->
+                    <div class="mb-3">
+                        <label class="filter-label">Статус</label>
+                        {{ form.status }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="filter-label">Сортировка</label>
+                        {{ form.ordering }}
+                    </div>
+
+                    <hr>
+
+                    <!-- Чекбоксы -->
+                    <div class="mb-3">
+                        <label class="filter-label">Коробка передач</label>
+                        <div class="d-flex flex-column gap-1">
+                            {% for checkbox in form.gearbox %}
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="filter-label">Привод</label>
+                        <div class="d-flex flex-column gap-1">
+                            {% for checkbox in form.driven_wheels %}
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="filter-label">Кузов</label>
+                        <div style="max-height: 150px; overflow-y: auto;">
+                            {% for checkbox in form.body %}
+                                <div class="form-check">
+                                    {{ checkbox.tag }}
+                                    <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Цена -->
+                    <label class="filter-label">Цена</label>
+                    <div class="row g-1 mb-3">
+                        <div class="col-6">{{ form.price_min }}</div>
+                        <div class="col-6">{{ form.price_max }}</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mb-2">Применить</button>
+                    <a href="{% url 'car_list' %}" class="btn btn-outline-secondary w-100">Сбросить</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ТАБЛИЦА -->
+    <div class="col-md-9">
+        <div class="table-responsive bg-white shadow-sm rounded">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>VIN</th>
+                        <th>Автомобиль</th>
+                        <th>Цвет</th>
+                        <th>Характеристики</th>
+                        <th>Цена</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for car in cars %}
+                    <tr class="clickable-row" onclick="window.location='{% url 'car_detail' car.vin %}'">
+                        <td><small class="text-primary">{{ car.vin }}</small></td>
+                        <td>
+                            <strong>{{ car.make }} {{ car.model }}</strong>
+                            <div class="small text-muted">{{ car.make_year }} г.</div>
+                        </td>
+                        <td>{{ car.color }}</td>
+                        <td class="small">
+                            {{ car.engine }} <br>
+                            {{ car.gearbox }}, {{ car.driven_wheels }}, {{ car.body }}
+                        </td>
+                        <td>{{ car.price }} ₽</td>
+                        <td>
+                            <span class="badge {% if car.car_status == 'В продаже' %}bg-success{% elif car.car_status == 'Продан' %}bg-secondary{% else %}bg-warning text-dark{% endif %}">
+                                {{ car.car_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-4">Ничего не найдено.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

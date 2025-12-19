@@ -1,12 +1,14 @@
 from django.contrib import admin
-from django.urls import path
-from django.views.generic import RedirectView
+from django.urls import path, include
 from core.api import api
 
 urlpatterns = [
-    # Перенаправление с главной страницы сразу в админку
-    path('', RedirectView.as_view(url='/admin/')),
-    
+    # Админка Django (для разработчика)
     path('admin/', admin.site.urls),
+
+    # API (нужно для авто-подстановки цены в админке)
     path('api/', api.urls),
+
+    # Подключение всех путей из core/urls.py
+    path('', include('core.urls')),
 ]

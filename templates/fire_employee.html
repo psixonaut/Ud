@@ -9,31 +9,33 @@
             </div>
             <div class="card-body">
                 <h5 class="card-title">{{ target.fio }}</h5>
-                <p class="card-text text-muted">{{ target.rank }}</p>
-                
-                <hr>
-                
+                <p class="card-text text-muted mb-4">Должность: {{ target.rank }}</p>
+
                 {% if count > 0 %}
                     <div class="alert alert-warning">
-                        У этого сотрудника запланировано <strong>{{ count }}</strong> тест-драйвов.<br>
-                        Необходимо выбрать преемника для передачи дел.
+                        У этого сотрудника запланировано <strong>{{ count }}</strong> активных тест-драйвов (статус "Ожидается").<br>
+                        Чтобы уволить его, необходимо выбрать сотрудника, которому будут переданы эти дела.
                     </div>
                 {% else %}
                     <div class="alert alert-success">
-                        Активных задач нет. Можно увольнять без передачи дел.
+                        Активных дел (тест-драйвов) нет. Сотрудник будет переведен в архив.
                     </div>
                 {% endif %}
 
                 <form method="post">
                     {% csrf_token %}
+
                     {% if count > 0 %}
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">{{ form.new_employee.label }}</label>
-                            {{ form.new_employee }}
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ form.new_employee.label }}</label>
+                        {{ form.new_employee }}
+                        {% if form.new_employee.errors %}
+                            <div class="text-danger small">{{ form.new_employee.errors }}</div>
+                        {% endif %}
+                    </div>
                     {% endif %}
-                    
-                    <div class="d-grid gap-2">
+
+                    <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-danger">Подтвердить увольнение</button>
                         <a href="{% url 'employee_list' %}" class="btn btn-light">Отмена</a>
                     </div>

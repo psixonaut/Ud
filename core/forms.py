@@ -1,42 +1,113 @@
 from django import forms
+from django.core.exceptions import ValidationError
+from django.forms import formset_factory  # Нужно для массовой приемки
 from .models import *
 
 
+# --- 1. АВТОРИЗАЦИЯ ---
 class LoginForm(forms.Form):
     fio = forms.CharField(label="ФИО Сотрудника", widget=forms.TextInput(attrs={'class': 'form-control'}))
     password = forms.CharField(label="Пароль", widget=forms.PasswordInput(attrs={'class': 'form-control'}))
 
 
+# --- 2. ФИЛЬТР АВТОМОБИЛЕЙ ---
+class CarFilterForm(forms.Form):
+    search = forms.CharField(required=False, label="Поиск", widget=forms.TextInput(
+        attrs={'class': 'form-control', 'placeholder': 'VIN, Марка или Модель'}))
+
+    price_min = forms.IntegerField(required=False, label="Цена от",
+                                   widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    price_max = forms.IntegerField(required=False, label="Цена до",
+                                   widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    year_min = forms.IntegerField(required=False, label="Год от",
+                                  widget=forms.NumberInput(attrs={'class': 'form-control'}))
+
+    status = forms.ChoiceField(
+        choices=[('', 'Все статусы')] + list(STATUS_CHOICES),
+        required=False,
+        label="Статус",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    BODY_CHOICES = [
+        ('Седан', 'Седан'), ('Кроссовер', 'Кроссовер'), ('Внедорожник', 'Внедорожник'),
+        ('Универсал', 'Универсал'), ('Лифтбек', 'Лифтбек'),
+        ('Купе-кроссовер', 'Купе-кроссовер'), ('Фастбек', 'Фастбек'),
+    ]
+
+    gearbox = forms.MultipleChoiceField(choices=GEARBOX_CHOICES, required=False, label="Коробка",
+                                        widget=forms.CheckboxSelectMultiple)
+    driven_wheels = forms.MultipleChoiceField(choices=DRIVE_CHOICES, required=False, label="Привод",
+                                              widget=forms.CheckboxSelectMultiple)
+    body = forms.MultipleChoiceField(choices=BODY_CHOICES, required=False, label="Кузов",
+                                     widget=forms.CheckboxSelectMultiple)
+
+    SORT_CHOICES = [
+        ('', 'По умолчанию'),
+        ('price_asc', 'Цена (↑)'),
+        ('price_desc', 'Цена (↓)'),
+        ('year_desc', 'Год (новые)'),
+    ]
+    ordering = forms.ChoiceField(choices=SORT_CHOICES, required=False, label="Сортировка",
+                                 widget=forms.Select(attrs={'class': 'form-select'}))
+
+
+# --- 3. ЗАКАЗЫ И ПРИЕМКА ---
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        exclude = ['id_employee', 'date_order', 'state_order', 'amount']
+        # Убрали 'amount' из исключений, теперь его можно вводить
+        exclude = ['id_employee', 'date_order', 'state_order']
         widgets = {
             'make': forms.TextInput(attrs={'class': 'form-control'}),
             'model': forms.TextInput(attrs={'class': 'form-control'}),
             'engine': forms.TextInput(attrs={'class': 'form-control'}),
-            'gearbox': forms.Select(attrs={'class': 'form-select'}),
-            'driven_wheels': forms.Select(attrs={'class': 'form-select'}),
             'body': forms.TextInput(attrs={'class': 'form-control'}),
-            'make_year': forms.NumberInput(attrs={'class': 'form-control'}),
             'trim': forms.TextInput(attrs={'class': 'form-control'}),
             'addons': forms.TextInput(attrs={'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),  # Виджет для количества
+            'gearbox': forms.Select(attrs={'class': 'form-select'}),
+            'driven_wheels': forms.Select(attrs={'class': 'form-select'}),
+            'make_year': forms.NumberInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'amount': 'Количество автомобилей',
+            'make': 'Марка', 'model': 'Модель', 'engine': 'Двигатель',
+            'gearbox': 'Коробка', 'driven_wheels': 'Привод', 'body': 'Кузов',
+            'make_year': 'Год выпуска', 'trim': 'Комплектация', 'addons': 'Доп. оборудование'
         }
 
 
 class CarArrivalForm(forms.Form):
-    """Форма для приемки машины из заказа"""
-    vin = forms.CharField(label="VIN", max_length=150, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    color = forms.CharField(label="Цвет", max_length=50, widget=forms.TextInput(attrs={'class': 'form-control'}))
-    price = forms.IntegerField(label="Цена продажи", widget=forms.NumberInput(attrs={'class': 'form-control'}))
+    """Форма для приемки ОДНОЙ машины (будет использоваться в наборе)"""
+    vin = forms.CharField(label="VIN номер", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    color = forms.CharField(label="Цвет", widget=forms.TextInput(attrs={'class': 'form-control'}))
+    price = forms.IntegerField(label="Цена продажи (₽)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
     date_of_delivery = forms.DateField(label="Дата поступления",
                                        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
 
 
+# Создаем фабрику форм (FormSet) для массового добавления
+CarArrivalFormSet = formset_factory(CarArrivalForm, extra=0)
+
+
+# --- 4. ПРОДАЖА ---
+class SaleForm(forms.Form):
+    passport_client = forms.ModelChoiceField(queryset=Client.objects.all(),
+                                             widget=forms.Select(attrs={'class': 'form-select'}), label="Клиент")
+    vin = forms.ModelChoiceField(queryset=Car.objects.filter(car_status='В продаже'),
+                                 widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_vin'}),
+                                 label="Автомобиль")
+    end_price = forms.IntegerField(label="Итоговая цена (0 = рассчитать автоматически)", required=False,
+                                   widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'id_end_price'}))
+
+
+# --- 5. ТЕСТ-ДРАЙВЫ ---
 class TestDriveForm(forms.ModelForm):
     class Meta:
         model = Test_drive
         fields = ['vin', 'passport_client', 'datetime_reservation']
+        labels = {'vin': 'Автомобиль', 'passport_client': 'Клиент', 'datetime_reservation': 'Дата и время'}
         widgets = {
             'vin': forms.Select(attrs={'class': 'form-select'}),
             'passport_client': forms.Select(attrs={'class': 'form-select'}),
@@ -49,19 +120,83 @@ class TestDriveForm(forms.ModelForm):
         self.fields['passport_client'].queryset = Client.objects.filter(license_number__isnull=False)
 
 
-class SaleForm(forms.Form):
-    passport_client = forms.ModelChoiceField(queryset=Client.objects.all(), label="Клиент",
-                                             widget=forms.Select(attrs={'class': 'form-select'}))
-    vin = forms.ModelChoiceField(queryset=Car.objects.filter(car_status='В продаже'), label="Автомобиль",
-                                 widget=forms.Select(attrs={'class': 'form-select'}))
-    end_price = forms.IntegerField(label="Итоговая цена (если отличается)", required=False,
-                                   widget=forms.NumberInput(attrs={'class': 'form-control'}))
+class TestDriveEditForm(forms.ModelForm):
+    class Meta:
+        model = Test_drive
+        fields = ['datetime_reservation', 'result']
+        labels = {'datetime_reservation': 'Дата и время', 'result': 'Результат'}
+        widgets = {
+            'datetime_reservation': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'result': forms.Select(attrs={'class': 'form-select'}),
+        }
 
 
-class EmployeeFireForm(forms.Form):
-    """Форма увольнения с передачей дел"""
+# --- 6. ПЕРСОНАЛ ---
+class EmployeeForm(forms.ModelForm):
+    class Meta:
+        model = Employee
+        fields = ['fio', 'rank', 'phone_number', 'license_number', 'passport_employee', 'b_date']
+        labels = {
+            'fio': 'ФИО', 'rank': 'Должность', 'phone_number': 'Телефон',
+            'license_number': 'Номер ВУ', 'passport_employee': 'Паспорт', 'b_date': 'Дата рождения'
+        }
+        widgets = {
+            'fio': forms.TextInput(attrs={'class': 'form-control'}),
+            'rank': forms.Select(attrs={'class': 'form-select'}),
+            'phone_number': forms.NumberInput(attrs={'class': 'form-control'}),
+            'license_number': forms.NumberInput(attrs={'class': 'form-control'}),
+            'passport_employee': forms.NumberInput(attrs={'class': 'form-control'}),
+            'b_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+
+
+class ReassignTestDriveForm(forms.Form):
     new_employee = forms.ModelChoiceField(
         queryset=Employee.objects.filter(employed=1, rank__in=['Менеджер', 'Продавец-консультант']),
-        label="На кого перевести будущие тест-драйвы?",
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label="На кого перевести дела?"
     )
+
+
+# --- 7. КЛИЕНТЫ ---
+class ClientForm(forms.ModelForm):
+    class Meta:
+        model = Client
+        fields = '__all__'
+        labels = {
+            'passport_client': 'Паспорт', 'fio': 'ФИО',
+            'license_number': 'Номер ВУ', 'phone_number': 'Телефон', 'b_day': 'Дата рождения'
+        }
+        widgets = {
+            'passport_client': forms.NumberInput(attrs={'class': 'form-control'}),
+            'fio': forms.TextInput(attrs={'class': 'form-control'}),
+            'license_number': forms.NumberInput(attrs={'class': 'form-control'}),
+            'phone_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'b_day': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        }
+
+class CarEditForm(forms.ModelForm):
+    """Форма для изменения цены, скидки и статуса (Тест-драйв <-> Продажа)"""
+    class Meta:
+        model = Car
+        fields = ['price', 'discount', 'car_status']
+        labels = {
+            'price': 'Базовая цена',
+            'discount': 'Скидка (%)',
+            'car_status': 'Текущий статус'
+        }
+        widgets = {
+            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            'discount': forms.NumberInput(attrs={'class': 'form-control', 'min': 0, 'max': 50}),
+            'car_status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Ограничиваем выбор статусов.
+        # Машину можно перекидывать только между "В продаже" и "Для тест-драйвов".
+        # Нельзя вручную вернуть "В пути" или поставить "Продан" (это делает система).
+        self.fields['car_status'].choices = [
+            ('В продаже', 'В продаже'),
+            ('Для тест-драйвов', 'Для тест-драйвов'),
+        ]

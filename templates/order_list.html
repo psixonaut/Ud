@@ -2,12 +2,15 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>📦 Заказы и Поставки</h2>
-    <a href="{% url 'create_order' %}" class="btn btn-success">+ Создать заказ</a>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
+        <h2>📦 Заказы и Поставки</h2>
+    </div>
+    <a href="{% url 'create_order' %}" class="btn btn-primary">➕ Новый заказ</a>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-hover">
+<div class="table-responsive bg-white shadow-sm rounded">
+    <table class="table table-hover mb-0 align-middle">
         <thead class="table-dark">
             <tr>
                 <th>ID</th>
@@ -20,28 +23,20 @@
         </thead>
         <tbody>
             {% for order in orders %}
-            <tr>
+            <tr class="clickable-row" onclick="window.location='{% url 'order_detail' order.id_order %}'" style="cursor: pointer;">
                 <td>{{ order.id_order }}</td>
-                <td>{{ order.date_order }}</td>
-                <td>{{ order.make }} {{ order.model }} <small>({{ order.trim }})</small></td>
+                <td>{{ order.date_order|date:"d.m.Y" }}</td>
+                <td>{{ order.make }} {{ order.model }}</td>
                 <td>{{ order.amount }}</td>
-                <td>
-                    {% if order.state_order == 'Оформлен' %}
-                        <span class="badge bg-success">Оформлен</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">{{ order.state_order }}</span>
-                    {% endif %}
-                </td>
-                <td>
+                <td>{{ order.state_order }}</td>
+                <td onclick="event.stopPropagation();">
                     {% if order.state_order != 'Оформлен' %}
-                        <a href="{% url 'accept_car' order.id_order %}" class="btn btn-sm btn-primary">Принять на склад</a>
-                    {% else %}
-                        <span class="text-muted"><small>Принято</small></span>
+                        <a href="{% url 'accept_car' order.id_order %}" class="btn btn-sm btn-outline-primary">Принять</a>
                     {% endif %}
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="6" class="text-center">Заказов нет.</td></tr>
+            <tr><td colspan="6" class="text-center py-4">Заказов пока нет.</td></tr>
             {% endfor %}
         </tbody>
     </table>

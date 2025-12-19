@@ -1,15 +1,20 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="mb-4">
-    <h2>👥 Персонал автосалона</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
+        <h2>👥 Управление персоналом</h2>
+    </div>
+    <a href="{% url 'add_employee' %}" class="btn btn-success">➕ Добавить сотрудника</a>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-hover align-middle">
+<div class="table-responsive bg-white shadow-sm rounded">
+    <!-- (Таблица сотрудников без изменений) -->
+    <table class="table table-hover mb-0 align-middle">
         <thead class="table-dark">
             <tr>
-                <th>ФИО</th>
+                <th>Сотрудник</th>
                 <th>Должность</th>
                 <th>Телефон</th>
                 <th>Статус</th>
@@ -18,22 +23,14 @@
         </thead>
         <tbody>
             {% for emp in employees %}
-            <tr {% if emp.employed == 0 %}class="table-secondary text-muted"{% endif %}>
-                <td>{{ emp.fio }}</td>
+            <tr {% if emp.employed == 0 %}class="table-light text-muted"{% endif %}>
+                <td><strong>{{ emp.fio }}</strong></td>
                 <td>{{ emp.rank }}</td>
                 <td>{{ emp.phone_number }}</td>
+                <td>{{ emp.employed|yesno:"Работает,Уволен" }}</td>
                 <td>
                     {% if emp.employed == 1 %}
-                        <span class="badge bg-success">Работает</span>
-                    {% else %}
-                        <span class="badge bg-danger">Уволен</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if emp.employed == 1 %}
-                        <a href="{% url 'fire_employee' emp.pk %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Вы уверены?')">Уволить</a>
-                    {% else %}
-                        <span class="small">Архив</span>
+                        <a href="{% url 'fire_employee' emp.pk %}" class="btn btn-sm btn-outline-danger">Уволить</a>
                     {% endif %}
                 </td>
             </tr>

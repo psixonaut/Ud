@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
+        <h2>💰 История Продаж</h2>
+    </div>
+    {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' %}
+        <a href="{% url 'create_sale' %}" class="btn btn-success btn-lg shadow-sm">➕ Оформить новую сделку</a>
+    {% endif %}
+</div>
+
+<div class="table-responsive bg-white shadow-sm rounded">
+    <table class="table table-hover mb-0 align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>№</th>
+                <th>Дата</th>
+                <th>Автомобиль</th>
+                <th>Клиент</th>
+                <th>Продавец</th>
+                <th>Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for sale in sales %}
+            {% with item=sale.sale_list_set.first %}
+            <tr class="clickable-row" onclick="window.location='{% url 'sale_detail' sale.id_sale %}'" style="cursor: pointer;">
+                <td>{{ sale.id_sale }}</td>
+                <td>{{ sale.sale_date|date:"d.m.Y" }}</td>
+                <td>
+                    {% if item %}
+                        <strong>{{ item.vin.make }} {{ item.vin.model }}</strong><br>
+                        <small class="text-muted">{{ item.vin.vin }}</small>
+                    {% else %}
+                        <span class="text-danger">Авто удален</span>
+                    {% endif %}
+                </td>
+                <td>{{ sale.passport_client.fio }}</td>
+                <td>
+                    {{ sale.ip_employee.fio }}<br>
+                    <small class="text-muted">{{ sale.ip_employee.rank }}</small>
+                </td>
+                <td><strong class="text-success">{{ sale.end_price }} ₽</strong></td>
+            </tr>
+            {% endwith %}
+            {% empty %}
+            <tr><td colspan="6" class="text-center py-5 text-muted">Продаж пока нет.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

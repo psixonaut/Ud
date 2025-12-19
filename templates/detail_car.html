@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ car.make }} {{ car.model }}</h4>
+                <span class="badge bg-light text-dark">{{ car.car_status }}</span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6"><strong>VIN:</strong> {{ car.vin }}</div>
+                    <div class="col-md-6"><strong>Год:</strong> {{ car.make_year }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6"><strong>Двигатель:</strong> {{ car.engine }}</div>
+                    <div class="col-md-6"><strong>КПП:</strong> {{ car.gearbox }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6"><strong>Привод:</strong> {{ car.driven_wheels }}</div>
+                    <div class="col-md-6"><strong>Кузов:</strong> {{ car.body }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-6"><strong>Цвет:</strong> {{ car.color }}</div>
+                    <div class="col-md-6"><strong>Комплектация:</strong> {{ car.trim }}</div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3 class="text-success">{{ car.price }} ₽</h3>
+                        {% if car.discount %}<small class="text-danger">Скидка: {{ car.discount }}%</small>{% endif %}
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <small class="text-muted">Поступила: {{ car.date_of_delivery|default:"-" }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between mt-4">
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary">Назад к списку</a>
+
+                    {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' and car.car_status != 'Продан' %}
+                        <a href="{% url 'edit_car' car.vin %}" class="btn btn-warning">
+                            ✏ Изменить цену / статус
+                        </a>
+                    {% endif %}
+                </div>
+    </div>
+
+    <!-- История (если есть) -->
+    <div class="col-md-4">
+        {% if history %}
+        <div class="card shadow">
+            <div class="card-header">История Тест-драйвов</div>
+            <ul class="list-group list-group-flush">
+                {% for td in history %}
+                <li class="list-group-item">
+                    <small>{{ td.datetime_reservation|date:"d.m.Y" }}</small><br>
+                    <strong>{{ td.passport_client.fio }}</strong><br>
+                    <span class="badge bg-secondary">{{ td.result }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

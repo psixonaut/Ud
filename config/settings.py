@@ -74,3 +74,12 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Куда перенаправлять пользователя, если он не вошел в систему
+LOGIN_URL = 'login'  # Это имя (name='login') мы задали в core/urls.py
+
+# Куда перенаправлять после успешного входа
+LOGIN_REDIRECT_URL = 'dashboard'
+
+# Куда перенаправлять после выхода
+LOGOUT_REDIRECT_URL = 'login'

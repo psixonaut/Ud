@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
+        <h2>👥 База клиентов</h2>
+    </div>
+    {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' %}
+        <a href="{% url 'add_client' %}" class="btn btn-primary">➕ Новый клиент</a>
+    {% endif %}
+</div>
+
+<!-- Поиск -->
+<div class="card mb-4 bg-light">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2">
+            <div class="col-md-10">
+                <input type="text" name="search" class="form-control" placeholder="ФИО или номер паспорта..." value="{{ request.GET.search|default:'' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Найти</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="table-responsive bg-white shadow-sm rounded">
+    <table class="table table-hover mb-0 align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>Паспорт</th>
+                <th>ФИО</th>
+                <th>Телефон</th>
+                <th>Права</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for client in clients %}
+            <tr>
+                <td>{{ client.passport_client }}</td>
+                <td>
+                    <strong>{{ client.fio }}</strong><br>
+                    <small class="text-muted">Д.Р.: {{ client.b_day|date:"d.m.Y" }}</small>
+                </td>
+                <td>{{ client.phone_number }}</td>
+                <td>
+                    {% if client.license_number %}
+                        <span class="badge bg-success">{{ client.license_number }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Нет прав</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <!-- Кнопка удаления (только если нет связей) -->
+                    <form action="{% url 'delete_client' client.passport_client %}" method="post" onsubmit="return confirm('Удалить клиента? Это действие необратимо.');" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">🗑</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center py-4">Клиенты не найдены.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

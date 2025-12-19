@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body p-4">
+                
+                <div class="alert alert-info">
+                    <strong>Инструкция:</strong> Заполните данные для каждого из <strong>{{ order.amount }}</strong> автомобилей в партии.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <!-- Обязательное поле для работы FormSet -->
+                    {{ formset.management_form }}
+                    
+                    <div class="row">
+                        {% for form in formset %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100 border-secondary">
+                                <div class="card-header bg-light fw-bold">
+                                    Автомобиль №{{ forloop.counter }}
+                                </div>
+                                <div class="card-body">
+                                    {% for field in form %}
+                                    <div class="mb-2">
+                                        <label class="form-label small mb-0">{{ field.label }}</label>
+                                        {{ field }}
+                                        {% if field.errors %}
+                                            <div class="text-danger small">{{ field.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                        <a href="{% url 'order_list' %}" class="btn btn-outline-secondary px-4">Отмена</a>
+                        <button type="submit" class="btn btn-success px-4 btn-lg">Сохранить партию</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

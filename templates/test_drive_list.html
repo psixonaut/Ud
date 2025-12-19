@@ -2,17 +2,20 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>🏁 Расписание Тест-драйвов</h2>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
+        <h2>🏁 Расписание Тест-драйвов</h2>
+    </div>
     {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' %}
-        <a href="{% url 'create_test_drive' %}" class="btn btn-success">+ Записать клиента</a>
+        <a href="{% url 'create_test_drive' %}" class="btn btn-success">➕ Записать клиента</a>
     {% endif %}
 </div>
 
-<div class="table-responsive">
-    <table class="table table-hover">
+<div class="table-responsive bg-white shadow-sm rounded">
+    <table class="table table-hover mb-0">
         <thead class="table-dark">
             <tr>
-                <th>Дата и Время</th>
+                <th>Дата</th>
                 <th>Автомобиль</th>
                 <th>Клиент</th>
                 <th>Сотрудник</th>
@@ -21,23 +24,28 @@
         </thead>
         <tbody>
             {% for td in tds %}
-            <tr>
-                <td><strong>{{ td.datetime_reservation|date:"d.m.Y H:i" }}</strong></td>
+            <tr class="clickable-row" onclick="window.location='{% url 'test_drive_detail' td.id_test %}'" style="cursor: pointer;">
+                <td><strong>{{ td.datetime_reservation|date:"d.m H:i" }}</strong></td>
                 <td>{{ td.vin.make }} {{ td.vin.model }}</td>
                 <td>{{ td.passport_client.fio }}</td>
                 <td>{{ td.id_employee.fio }}</td>
                 <td>
+                    <!-- ЦВЕТОВОЕ КОДИРОВАНИЕ -->
                     {% if td.result == 'Ожидается' %}
-                        <span class="badge bg-info text-dark">{{ td.result }}</span>
-                    {% elif td.result == 'Купил' %}
+                        <span class="badge bg-info text-dark">Ожидается</span>
+                    {% elif td.result == 'Успешно' or td.result == 'Купил' %}
                         <span class="badge bg-success">{{ td.result }}</span>
+                    {% elif td.result == 'Клиент думает' %}
+                        <span class="badge bg-warning text-dark">Думает</span>
+                    {% elif td.result == 'Отказ' %}
+                        <span class="badge bg-danger">Отказ</span>
                     {% else %}
                         <span class="badge bg-secondary">{{ td.result }}</span>
                     {% endif %}
                 </td>
             </tr>
             {% empty %}
-            <tr><td colspan="5" class="text-center">Записей нет.</td></tr>
+            <tr><td colspan="5" class="text-center py-4">Записей нет.</td></tr>
             {% endfor %}
         </tbody>
     </table>

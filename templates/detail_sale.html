@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">💰 Сделка #{{ sale.id_sale }}</h4>
+                <span>{{ sale.sale_date|date:"d E Y" }}</span>
+            </div>
+            <div class="card-body p-4">
+                
+                <div class="row mb-4 text-center border-bottom pb-4">
+                    <div class="col-12">
+                        <small class="text-muted text-uppercase">Итоговая сумма</small>
+                        <h1 class="text-success display-4 fw-bold">{{ sale.end_price }} ₽</h1>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5 class="text-secondary mb-3">🚙 Автомобиль</h5>
+                        <div class="p-3 bg-light rounded">
+                            {% if item %}
+                                <p class="mb-1 fs-5"><strong>{{ item.vin.make }} {{ item.vin.model }}</strong></p>
+                                <p class="mb-1 text-muted">{{ item.vin.vin }}</p>
+                                <p class="mb-0">{{ item.vin.year }} г.в., {{ item.vin.color }}</p>
+                                <hr>
+                                <p class="mb-0">
+                                    Базовая цена: {{ item.vin.price }} ₽<br>
+                                    Скидка: {% if item.vin.discount %}{{ item.vin.discount }}%{% else %}Нет{% endif %}
+                                </p>
+                            {% else %}
+                                <p class="text-danger">Данные об авто не найдены</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="text-secondary mb-3">📄 Участники</h5>
+                        <div class="mb-3">
+                            <label class="small text-muted fw-bold">КЛИЕНТ</label>
+                            <p class="fs-5 mb-0">{{ sale.passport_client.fio }}</p>
+                            <small>{{ sale.passport_client.phone_number }}</small>
+                        </div>
+                        <div>
+                            <label class="small text-muted fw-bold">ПРОДАВЕЦ</label>
+                            <p class="fs-5 mb-0">{{ sale.ip_employee.fio }}</p>
+                            <small>{{ sale.ip_employee.rank }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'sale_list' %}" class="btn btn-outline-secondary">Назад к списку</a>
+                    <!-- Можно добавить кнопку "Печать договора" в будущем -->
+                    <button class="btn btn-outline-primary" onclick="window.print()">Печать</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

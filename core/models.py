@@ -42,7 +42,9 @@ class Employee(models.Model):
     b_date = models.DateField(db_column='Дата_рождения')
     employed = models.IntegerField(db_column='Трудоустроен', default=1)
 
-    def __str__(self): return self.fio
+    def __str__(self):
+        # Сортировка по алфавиту будет работать, поиск по ID тоже (если ввести цифру)
+        return f"{self.fio} (ID: {self.pk})"
 
     class Meta: managed = False; db_table = 'Сотрудник'
 
@@ -54,9 +56,12 @@ class Client(models.Model):
     phone_number = models.CharField(db_column='Номер_телефона', max_length=50)
     b_day = models.DateField(db_column='Дата_рождения')
 
-    def __str__(self): return self.fio
-
-    class Meta: managed = False; db_table = 'Клиент'
+    def __str__(self):
+        return f"{self.fio} (Паспорт: {self.passport_client})"
+    class Meta:
+        managed = False
+        db_table = 'Клиент'
+        ordering = ['fio'] # Сортировка по алфавиту в выпадающих списках
 
 
 class Car(models.Model):
@@ -79,7 +84,13 @@ class Car(models.Model):
 
     # (Ваш метод clean сохраняется здесь, сократил для места)
 
-    class Meta: managed = False; db_table = 'Автомобиль'
+    def __str__(self):
+        # В списке будет: "BMW X5 (VIN: WBA...)" - поиск сработает и по марке, и по VIN
+        return f"{self.make} {self.model} (VIN: {self.vin})"
+    class Meta:
+        managed = False
+        db_table = 'Автомобиль'
+        ordering = ['make', 'model'] # Сортировка по алфавиту
 
 
 class Order(models.Model):
