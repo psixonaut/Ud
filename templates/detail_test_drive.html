@@ -45,22 +45,19 @@
                     </div>
                 </div>
 
+                <!-- БЛОК КНОПОК -->
                 <div class="d-flex justify-content-between mt-3">
-                    <a href="javascript:history.back()" class="btn btn-outline-secondary">Назад к списку</a>
-                    <!-- Кнопок редактирования нет, так как история неизменна -->
+                    <!-- Кнопка Назад (одна-единственная) -->
+                    <a href="{% url 'test_drive_list' %}" class="btn btn-outline-secondary">Назад к списку</a>
+
+                    <!-- Кнопка Редактирования -->
+                    <a href="{% url 'edit_test_drive' td.id_test %}" class="btn btn-primary">
+                        ✏ Редактировать итог/время
+                    </a>
                 </div>
 
             </div>
         </div>
     </div>
-</div>
-
-<div class="d-flex justify-content-between mt-3">
-    <a href="{% url 'test_drive_list' %}" class="btn btn-outline-secondary">Назад к списку</a>
-
-    <!-- Кнопка редактирования -->
-    <a href="{% url 'edit_test_drive' td.id_test %}" class="btn btn-primary">
-        ✏ Редактировать итог/время
-    </a>
 </div>
 {% endblock %}

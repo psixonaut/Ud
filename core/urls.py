@@ -35,6 +35,7 @@ urlpatterns = [
     path('employees/', views.employee_list, name='employee_list'),
     path('employees/new/', views.add_employee, name='add_employee'),  # <--- Новый
     path('employees/<int:emp_id>/fire/', views.fire_employee, name='fire_employee'),
+    path('employees/<int:emp_id>/edit/', views.edit_employee, name='edit_employee'),
 
 # КЛИЕНТЫ
     path('clients/', views.client_list, name='client_list'),           # <--- Новый

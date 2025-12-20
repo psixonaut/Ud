@@ -23,7 +23,7 @@ class CarFilterForm(forms.Form):
                                   widget=forms.NumberInput(attrs={'class': 'form-control'}))
 
     status = forms.ChoiceField(
-        choices=[('', 'Все статусы')] + list(STATUS_CHOICES),
+        choices=[('', 'Все статусы')] + [s for s in STATUS_CHOICES if s[0] != 'В пути'],
         required=False,
         label="Статус",
         widget=forms.Select(attrs={'class': 'form-select'})
@@ -132,7 +132,15 @@ class TestDriveEditForm(forms.ModelForm):
 
 
 # --- 6. ПЕРСОНАЛ ---
+
 class EmployeeForm(forms.ModelForm):
+    """Форма добавления сотрудника (все поля + пароль)"""
+    password = forms.CharField(
+        label="Пароль для входа",
+        widget=forms.PasswordInput(attrs={'class': 'form-control'}),
+        help_text="Придумайте пароль"
+    )
+
     class Meta:
         model = Employee
         fields = ['fio', 'rank', 'phone_number', 'license_number', 'passport_employee', 'b_date']
@@ -149,6 +157,21 @@ class EmployeeForm(forms.ModelForm):
             'b_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
+class EmployeeEditForm(forms.ModelForm):
+    """
+    Форма редактирования сотрудника.
+    ИЗМЕНЕНИЕ: Оставлена только смена пароля.
+    """
+    new_password = forms.CharField(
+        label="Установить новый пароль",
+        required=True, # Обязательно, раз это единственная функция формы
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Введите новый пароль'}),
+    )
+
+    class Meta:
+        model = Employee
+        # Пустой список полей, чтобы нельзя было менять данные сотрудника
+        fields = []
 
 class ReassignTestDriveForm(forms.Form):
     new_employee = forms.ModelChoiceField(
