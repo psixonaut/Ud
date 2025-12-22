@@ -60,7 +60,6 @@ class TestDriveCreateSchema(ModelSchema):
 def create_test_drive(request, payload: TestDriveCreateSchema):
     try:
         data = payload.dict()
-        # Конвертируем ID в объекты, так как payload содержит int/str
         data['vin'] = get_object_or_404(Car, vin=data['vin'])
         data['passport_client'] = get_object_or_404(Client, passport_client=data['passport_client'])
         data['id_employee'] = get_object_or_404(Employee, id_employee=data['id_employee'])

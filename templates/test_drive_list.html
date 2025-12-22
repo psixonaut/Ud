@@ -3,11 +3,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
-        <h2>🏁 Расписание Тест-драйвов</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">На главную</a>
+        <h2>Расписание Тест-драйвов</h2>
     </div>
     {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' %}
-        <a href="{% url 'create_test_drive' %}" class="btn btn-success">➕ Записать клиента</a>
+        <a href="{% url 'create_test_drive' %}" class="btn btn-success">Записать клиента</a>
     {% endif %}
 </div>
 
@@ -30,7 +30,6 @@
                 <td>{{ td.passport_client.fio }}</td>
                 <td>{{ td.id_employee.fio }}</td>
                 <td>
-                    <!-- ЦВЕТОВОЕ КОДИРОВАНИЕ -->
                     {% if td.result == 'Ожидается' %}
                         <span class="badge bg-info text-dark">Ожидается</span>
                     {% elif td.result == 'Успешно' or td.result == 'Купил' %}

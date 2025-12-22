@@ -27,7 +27,7 @@ def custom_login(request):
                 employee = Employee.objects.get(fio__iexact=fio)
 
                 if employee.employed == 0:
-                    messages.error(request, "⛔ Доступ запрещен: Сотрудник уволен.")
+                    messages.error(request, "Доступ запрещен: Сотрудник уволен.")
                     return render(request, 'login.html', {'form': form})
 
                 if employee.user:
@@ -232,14 +232,15 @@ def accept_car(request, order_id):
                         )
                     order.state_order = 'Оформлен'
                     order.save()
-                messages.success(request, "✅ Автомобили приняты!")
+                messages.success(request, "Автомобили приняты!")
                 return redirect('order_list')
             except Exception as e:
                 messages.error(request, f"Ошибка при сохранении: {e}")
     else:
         formset = CarFormSet()
 
-    return render(request, 'form_accept_mass.html', {'formset': formset, 'order': order, 'title': 'Приемка авто'})
+    return render(request, 'form_accept_mass.html',
+                  {'formset': formset, 'order': order, 'title': 'Приемка авто'})
 
 
 # ==========================================
@@ -298,7 +299,7 @@ def create_sale(request):
                         sale.end_price = final_price
                         sale.save()
 
-                messages.success(request, "✅ Продажа оформлена!")
+                messages.success(request, "Продажа оформлена!")
                 return redirect('sale_list')
             except ValidationError as e:
                 messages.error(request, f"Ошибка: {e.message}")
@@ -336,7 +337,7 @@ def create_test_drive(request):
             try:
                 td.full_clean()
                 td.save()
-                messages.success(request, "✅ Запись создана!")
+                messages.success(request, "Запись создана!")
                 return redirect('test_drive_list')
             except ValidationError as e:
                 if hasattr(e, 'message_dict'):
@@ -365,7 +366,8 @@ def edit_test_drive(request, td_id):
                 messages.error(request, f"Ошибка: {e}")
     else:
         form = TestDriveEditForm(instance=td)
-    return render(request, 'form_base.html', {'form': form, 'title': f'Редактирование: Тест-драйв #{td.pk}'})
+    return render(request, 'form_base.html',
+                  {'form': form, 'title': f'Редактирование: Тест-драйв #{td.pk}'})
 
 
 # ==========================================
@@ -456,7 +458,8 @@ def fire_employee(request, emp_id):
             return redirect('employee_list')
     else:
         form = ReassignTestDriveForm()
-    return render(request, 'fire_employee.html', {'form': form, 'target': target, 'count': future.count()})
+    return render(request, 'fire_employee.html',
+                  {'form': form, 'target': target, 'count': future.count()})
 
 
 # ==========================================

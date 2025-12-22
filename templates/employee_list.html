@@ -1,14 +1,12 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
-        <h2>👥 Управление персоналом</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">На главную</a>
+        <h2>Управление персоналом</h2>
     </div>
-    <a href="{% url 'add_employee' %}" class="btn btn-success">➕ Добавить сотрудника</a>
+    <a href="{% url 'add_employee' %}" class="btn btn-success">Добавить сотрудника</a>
 </div>
-
 <div class="table-responsive bg-white shadow-sm rounded">
     <table class="table table-hover mb-0 align-middle">
         <thead class="table-dark">
@@ -38,11 +36,8 @@
                 </td>
                 <td>
                     {% if emp.employed == 1 %}
-                        <!-- Кнопка Редактировать -->
-                        <a href="{% url 'edit_employee' emp.pk %}" class="btn btn-sm btn-primary me-1" title="Редактировать / Сменить пароль">✏</a>
-
-                        <!-- Кнопка Уволить -->
-                        <a href="{% url 'fire_employee' emp.pk %}" class="btn btn-sm btn-outline-danger" title="Уволить">🗑</a>
+                        <a href="{% url 'edit_employee' emp.pk %}" class="btn btn-sm btn-primary me-1" title="Сменить пароль">Сменить пароль</a>
+                        <a href="{% url 'fire_employee' emp.pk %}" class="btn btn-sm btn-outline-danger" title="Уволить">Уволить</a>
                     {% endif %}
                 </td>
             </tr>

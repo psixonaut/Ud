@@ -1,11 +1,10 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">🏁 Тест-драйв #{{ td.id_test }}</h4>
+                <h4 class="mb-0">Тест-драйв #{{ td.id_test }}</h4>
                 <span class="badge {% if td.result == 'Ожидается' %}bg-info text-dark{% elif td.result == 'Купил' or td.result == 'Успешно' %}bg-success{% else %}bg-secondary{% endif %}">
                     {{ td.result }}
                 </span>
@@ -14,17 +13,16 @@
                 
                 <div class="row mb-4">
                     <div class="col-md-12">
-                        <h5 class="text-secondary border-bottom pb-2">📅 Время и Итог</h5>
+                        <h5 class="text-secondary border-bottom pb-2">Время и Итог</h5>
                         <p class="fs-5">
                             <strong>Дата:</strong> {{ td.datetime_reservation|date:"d E Y, H:i" }}<br>
                             <strong>Результат:</strong> {{ td.result }}
                         </p>
                     </div>
                 </div>
-
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <h5 class="text-secondary border-bottom pb-2">🚙 Автомобиль</h5>
+                        <h5 class="text-secondary border-bottom pb-2">Автомобиль</h5>
                         <p>
                             <strong>{{ td.vin.make }} {{ td.vin.model }}</strong><br>
                             <span class="text-muted">{{ td.vin.vin }}</span><br>
@@ -33,7 +31,7 @@
                         </p>
                     </div>
                     <div class="col-md-6">
-                        <h5 class="text-secondary border-bottom pb-2">👤 Участники</h5>
+                        <h5 class="text-secondary border-bottom pb-2">Участники</h5>
                         <p>
                             <strong>Клиент:</strong> {{ td.passport_client.fio }}<br>
                             <small class="text-muted">Тел: {{ td.passport_client.phone_number }}</small>
@@ -44,18 +42,12 @@
                         </p>
                     </div>
                 </div>
-
-                <!-- БЛОК КНОПОК -->
                 <div class="d-flex justify-content-between mt-3">
-                    <!-- Кнопка Назад (одна-единственная) -->
                     <a href="{% url 'test_drive_list' %}" class="btn btn-outline-secondary">Назад к списку</a>
-
-                    <!-- Кнопка Редактирования -->
                     <a href="{% url 'edit_test_drive' td.id_test %}" class="btn btn-primary">
-                        ✏ Редактировать итог/время
+                        Редактировать итог/время
                     </a>
                 </div>
-
             </div>
         </div>
     </div>

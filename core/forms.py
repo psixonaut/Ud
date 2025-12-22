@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.forms import formset_factory  # Нужно для массовой приемки
+from django.forms import formset_factory
 from .models import *
 
 
@@ -56,7 +56,6 @@ class CarFilterForm(forms.Form):
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
-        # Убрали 'amount' из исключений, теперь его можно вводить
         exclude = ['id_employee', 'date_order', 'state_order']
         widgets = {
             'make': forms.TextInput(attrs={'class': 'form-control'}),
@@ -79,15 +78,11 @@ class OrderForm(forms.ModelForm):
 
 
 class CarArrivalForm(forms.Form):
-    """Форма для приемки ОДНОЙ машины (будет использоваться в наборе)"""
     vin = forms.CharField(label="VIN номер", widget=forms.TextInput(attrs={'class': 'form-control'}))
     color = forms.CharField(label="Цвет", widget=forms.TextInput(attrs={'class': 'form-control'}))
     price = forms.IntegerField(label="Цена продажи (₽)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
     date_of_delivery = forms.DateField(label="Дата поступления",
                                        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
-
-
-# Создаем фабрику форм (FormSet) для массового добавления
 CarArrivalFormSet = formset_factory(CarArrivalForm, extra=0)
 
 
@@ -132,9 +127,7 @@ class TestDriveEditForm(forms.ModelForm):
 
 
 # --- 6. ПЕРСОНАЛ ---
-
 class EmployeeForm(forms.ModelForm):
-    """Форма добавления сотрудника (все поля + пароль)"""
     password = forms.CharField(
         label="Пароль для входа",
         widget=forms.PasswordInput(attrs={'class': 'form-control'}),
@@ -158,19 +151,14 @@ class EmployeeForm(forms.ModelForm):
         }
 
 class EmployeeEditForm(forms.ModelForm):
-    """
-    Форма редактирования сотрудника.
-    ИЗМЕНЕНИЕ: Оставлена только смена пароля.
-    """
     new_password = forms.CharField(
         label="Установить новый пароль",
-        required=True, # Обязательно, раз это единственная функция формы
+        required=True,
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Введите новый пароль'}),
     )
 
     class Meta:
         model = Employee
-        # Пустой список полей, чтобы нельзя было менять данные сотрудника
         fields = []
 
 class ReassignTestDriveForm(forms.Form):
@@ -199,7 +187,6 @@ class ClientForm(forms.ModelForm):
         }
 
 class CarEditForm(forms.ModelForm):
-    """Форма для изменения цены, скидки и статуса (Тест-драйв <-> Продажа)"""
     class Meta:
         model = Car
         fields = ['price', 'discount', 'car_status']
@@ -216,9 +203,6 @@ class CarEditForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Ограничиваем выбор статусов.
-        # Машину можно перекидывать только между "В продаже" и "Для тест-драйвов".
-        # Нельзя вручную вернуть "В пути" или поставить "Продан" (это делает система).
         self.fields['car_status'].choices = [
             ('В продаже', 'В продаже'),
             ('Для тест-драйвов', 'Для тест-драйвов'),

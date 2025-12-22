@@ -6,7 +6,6 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -45,7 +44,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Настройки БД (подставьте свои данные)
+# Настройки БД
 DATABASES = {
     "default": {
 'ENGINE': 'django.db.backends.postgresql',
@@ -77,7 +76,7 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Куда перенаправлять пользователя, если он не вошел в систему
-LOGIN_URL = 'login'  # Это имя (name='login') мы задали в core/urls.py
+LOGIN_URL = 'login'
 
 # Куда перенаправлять после успешного входа
 LOGIN_REDIRECT_URL = 'dashboard'

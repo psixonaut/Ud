@@ -1,5 +1,4 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="row">
     <div class="col-md-8">
@@ -43,13 +42,11 @@
 
                     {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' and car.car_status != 'Продан' %}
                         <a href="{% url 'edit_car' car.vin %}" class="btn btn-warning">
-                            ✏ Изменить цену / статус
+                            Изменить цену / статус
                         </a>
                     {% endif %}
                 </div>
     </div>
-
-    <!-- История (если есть) -->
     <div class="col-md-4">
         {% if history %}
         <div class="card shadow">

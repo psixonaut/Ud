@@ -1,27 +1,21 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
-        <h2>🚙 Автомобили в наличии</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">На главную</a>
+        <h2>Автомобили в наличии</h2>
     </div>
 </div>
-
 <div class="row">
-    <!-- БОКОВАЯ ПАНЕЛЬ ФИЛЬТРОВ -->
     <div class="col-md-3">
         <div class="card shadow-sm mb-4">
             <div class="card-header bg-dark text-white">Фильтры</div>
             <div class="card-body">
                 <form method="get">
-                    <!-- Поиск -->
                     <div class="mb-3">
                         {{ form.search.label_tag }}
                         {{ form.search }}
                     </div>
-
-                    <!-- Статус и Сортировка -->
                     <div class="mb-3">
                         <label class="filter-label">Статус</label>
                         {{ form.status }}
@@ -30,10 +24,7 @@
                         <label class="filter-label">Сортировка</label>
                         {{ form.ordering }}
                     </div>
-
                     <hr>
-
-                    <!-- Чекбоксы -->
                     <div class="mb-3">
                         <label class="filter-label">Коробка передач</label>
                         <div class="d-flex flex-column gap-1">
@@ -45,7 +36,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="filter-label">Привод</label>
                         <div class="d-flex flex-column gap-1">
@@ -57,7 +47,6 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <label class="filter-label">Кузов</label>
                         <div style="max-height: 150px; overflow-y: auto;">
@@ -69,24 +58,18 @@
                             {% endfor %}
                         </div>
                     </div>
-
                     <hr>
-
-                    <!-- Цена -->
                     <label class="filter-label">Цена</label>
                     <div class="row g-1 mb-3">
                         <div class="col-6">{{ form.price_min }}</div>
                         <div class="col-6">{{ form.price_max }}</div>
                     </div>
-
                     <button type="submit" class="btn btn-primary w-100 mb-2">Применить</button>
                     <a href="{% url 'car_list' %}" class="btn btn-outline-secondary w-100">Сбросить</a>
                 </form>
             </div>
         </div>
     </div>
-
-    <!-- ТАБЛИЦА -->
     <div class="col-md-9">
         <div class="table-responsive bg-white shadow-sm rounded">
             <table class="table table-hover mb-0">

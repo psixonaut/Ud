@@ -1,16 +1,12 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h2>👋 Добрый день, {{ user.employee_profile.fio }}</h2>
+        <h2>Добрый день, {{ user.employee_profile.fio }}</h2>
     </div>
 </div>
-
-<!-- СТАТИСТИКА -->
 {% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Специалист по закупкам' %}
 <div class="row mb-5">
-    <!-- (Карточки статистики без изменений) -->
     <div class="col-md-4">
         <div class="card text-white bg-primary h-100">
             <div class="card-header">Продаж всего</div>
@@ -31,88 +27,64 @@
     </div>
 </div>
 {% endif %}
-
-<!-- МЕНЮ ДЕЙСТВИЙ -->
 <h4 class="mb-3 text-secondary">Меню действий</h4>
 <div class="row g-4">
-
-    <!-- АВТОМОБИЛИ (Все видят) -->
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'car_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-primary">
                 <div class="card-body text-center py-4">
-                    <div class="h1 mb-3">🚙</div>
                     <h5 class="card-title text-primary">Автомобили</h5>
-                    <p class="text-muted small mb-0">Поиск и склад</p>
                 </div>
             </div>
         </a>
     </div>
-
-    <!-- ТЕСТ-ДРАЙВЫ (Скрыто от Закупщика) -->
     {% if user.employee_profile.rank != 'Специалист по закупкам' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'test_drive_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-info">
                 <div class="card-body text-center py-4">
-                    <div class="h1 mb-3">🏁</div>
                     <h5 class="card-title text-info">Тест-драйвы</h5>
-                    <p class="text-muted small mb-0">Расписание</p>
                 </div>
             </div>
         </a>
     </div>
     {% endif %}
-
-    <!-- ЗАКАЗЫ (Только Закупщик) -->
     {% if user.employee_profile.rank == 'Специалист по закупкам' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'order_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-warning">
                 <div class="card-body text-center py-4">
-                    <div class="h1 mb-3">📦</div>
                     <h5 class="card-title text-warning">Заказы</h5>
-                    <p class="text-muted small mb-0">Поставки и приемка</p>
                 </div>
             </div>
         </a>
     </div>
     {% endif %}
-
-    <!-- ПРОДАЖИ (Менеджер и Продавец) -->
     {% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Продавец-консультант' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'sale_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-success">
                 <div class="card-body text-center py-4">
-                    <div class="h1 mb-3">💰</div>
                     <h5 class="card-title text-success">Продажи</h5>
-                    <p class="text-muted small mb-0">Оформление и История</p>
                 </div>
             </div>
         </a>
     </div>
-    <!-- КЛИЕНТЫ -->
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'client_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-secondary">
                 <div class="card-body text-center py-4">
-                    <div class="h1 mb-3">👨‍👩‍👧‍👦</div>
                     <h5 class="card-title text-secondary">Клиенты</h5>
-                    <p class="text-muted small mb-0">База покупателей</p>
                 </div>
             </div>
         </a>
     </div>
     {% endif %}
-
-    <!-- ПЕРСОНАЛ (Менеджер) -->
     {% if user.employee_profile.rank == 'Менеджер' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'employee_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-dark">
                 <div class="card-body text-center py-4">
-                    <div class="h1 mb-3">👥</div>
                     <h5 class="card-title text-dark">Персонал</h5>
                 </div>
             </div>

@@ -3,11 +3,11 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">⬅ На главную</a>
-        <h2>💰 История Продаж</h2>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">На главную</a>
+        <h2>История Продаж</h2>
     </div>
     {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' %}
-        <a href="{% url 'create_sale' %}" class="btn btn-success btn-lg shadow-sm">➕ Оформить новую сделку</a>
+        <a href="{% url 'create_sale' %}" class="btn btn-success btn-lg shadow-sm">Оформить новую сделку</a>
     {% endif %}
 </div>
 

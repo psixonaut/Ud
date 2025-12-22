@@ -1,11 +1,10 @@
 {% extends 'base.html' %}
-
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow">
             <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">📦 Заказ #{{ order.id_order }}</h4>
+                <h4 class="mb-0">Заказ #{{ order.id_order }}</h4>
                 {% if order.state_order == 'Оформлен' %}
                     <span class="badge bg-success">Оформлен</span>
                 {% else %}
@@ -42,7 +41,7 @@
                     
                     {% if order.state_order != 'Оформлен' and user.employee_profile.rank == 'Специалист по закупкам' %}
                         <a href="{% url 'accept_car' order.id_order %}" class="btn btn-primary">
-                            ⬇ Принять на склад
+                            Принять на склад
                         </a>
                     {% endif %}
                 </div>
