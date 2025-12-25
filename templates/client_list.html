@@ -5,9 +5,6 @@
         <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary mb-2">На главную</a>
         <h2>База клиентов</h2>
     </div>
-    {% if user.employee_profile.rank in 'Менеджер,Продавец-консультант' %}
-        <a href="{% url 'add_client' %}" class="btn btn-primary">Новый клиент</a>
-    {% endif %}
 </div>
 <div class="card mb-4 bg-light">
     <div class="card-body py-2">

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
@@ -10,16 +11,17 @@
                 </span>
             </div>
             <div class="card-body">
-                
+
                 <div class="row mb-4">
                     <div class="col-md-12">
-                        <h5 class="text-secondary border-bottom pb-2">Время и Итог</h5>
+                        <h5 class="text-secondary border-bottom pb-2">Время и результат</h5>
                         <p class="fs-5">
-                            <strong>Дата:</strong> {{ td.datetime_reservation|date:"d E Y, H:i" }}<br>
+                            <strong>Дата:</strong> {{ td.datetime_reservation|date:"d.m.Y H:i" }}<br>
                             <strong>Результат:</strong> {{ td.result }}
                         </p>
                     </div>
                 </div>
+
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <h5 class="text-secondary border-bottom pb-2">Автомобиль</h5>
@@ -42,12 +44,35 @@
                         </p>
                     </div>
                 </div>
-                <div class="d-flex justify-content-between mt-3">
+
+                <!-- БЛОК КНОПОК -->
+                <div class="d-flex flex-wrap gap-2 justify-content-between mt-4 pt-3 border-top">
+
                     <a href="{% url 'test_drive_list' %}" class="btn btn-outline-secondary">Назад к списку</a>
-                    <a href="{% url 'edit_test_drive' td.id_test %}" class="btn btn-primary">
-                        Редактировать итог/время
-                    </a>
+
+                    <div class="d-flex gap-2">
+                        <!-- Если тест-драйв еще не прошел, можно ОТМЕНИТЬ (сменить статус) -->
+                        {% if td.result == 'Ожидается' %}
+                            <form action="{% url 'cancel_test_drive' td.id_test %}" method="post" onsubmit="return confirm('Пометить как Отмененный?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning text-dark">Отменить запись</button>
+                            </form>
+                        {% endif %}
+
+                        <!-- Кнопка РЕДАКТИРОВАТЬ -->
+                        <a href="{% url 'edit_test_drive' td.id_test %}" class="btn btn-primary">
+                            Редактировать
+                        </a>
+
+                        <!-- Кнопка УДАЛИТЬ (Опасная зона) -->
+                        <form action="{% url 'delete_test_drive' td.id_test %}" method="post" onsubmit="return confirm('Удалить эту запись насовсем?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger">Удалить</button>
+                        </form>
+                    </div>
+
                 </div>
+
             </div>
         </div>
     </div>

@@ -1,95 +1,145 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-12">
-        <h2>Добрый день, {{ user.employee_profile.fio }}</h2>
+        <h2>Доброе время суток, {{ user.employee_profile.fio }}</h2>
+        <p class="text-muted">Ваша должность: <strong>{{ user.employee_profile.rank }}</strong></p>
     </div>
 </div>
+
+<!-- СТАТИСТИКА (Только для Менеджеров и Закупщиков) -->
 {% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Специалист по закупкам' %}
 <div class="row mb-5">
     <div class="col-md-4">
-        <div class="card text-white bg-primary h-100">
+        <div class="card text-white bg-primary h-100 shadow-sm">
             <div class="card-header">Продаж всего</div>
-            <div class="card-body text-center"><h1 class="display-4 fw-bold">{{ sales_count|default:"0" }}</h1></div>
+            <div class="card-body text-center">
+                <h1 class="display-4 fw-bold">{{ sales_count|default:"0" }}</h1>
+            </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-white bg-success h-100">
-            <div class="card-header">Выручка</div>
-            <div class="card-body text-center"><h2 class="display-6 fw-bold">{{ total_revenue|default:"0" }} ₽</h2></div>
+        <div class="card text-white bg-success h-100 shadow-sm">
+            <div class="card-header">Общая сумма</div>
+            <div class="card-body text-center">
+                <h2 class="display-6 fw-bold">{{ total_revenue|default:"0" }} ₽</h2>
+            </div>
         </div>
     </div>
     <div class="col-md-4">
-        <div class="card text-dark bg-warning h-100">
-            <div class="card-header">Авто в наличии</div>
-            <div class="card-body text-center"><h1 class="display-4 fw-bold">{{ cars_in_stock|default:"0" }}</h1></div>
+        <div class="card text-dark bg-warning h-100 shadow-sm">
+            <div class="card-header">Автомобилей в наличии</div>
+            <div class="card-body text-center">
+                <h1 class="display-4 fw-bold">{{ cars_in_stock|default:"0" }}</h1>
+            </div>
         </div>
     </div>
 </div>
 {% endif %}
+
+<!-- МЕНЮ ДЕЙСТВИЙ -->
 <h4 class="mb-3 text-secondary">Меню действий</h4>
 <div class="row g-4">
+
+    <!-- 1. АВТОМОБИЛИ (Доступно всем) -->
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'car_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-primary">
                 <div class="card-body text-center py-4">
-                    <h5 class="card-title text-primary">Автомобили</h5>
+                    <h5 class="card-title text-primary fw-bold">Автомобили</h5>
                 </div>
             </div>
         </a>
     </div>
+
+    <!-- 2. ТЕСТ-ДРАЙВЫ (Скрыто от Закупщика) -->
     {% if user.employee_profile.rank != 'Специалист по закупкам' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'test_drive_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-info">
                 <div class="card-body text-center py-4">
-                    <h5 class="card-title text-info">Тест-драйвы</h5>
+                    <h5 class="card-title text-info fw-bold">Тест-драйвы</h5>
                 </div>
             </div>
         </a>
     </div>
     {% endif %}
+
+    <!-- 3. ЗАКАЗЫ (Только Закупщик) -->
     {% if user.employee_profile.rank == 'Специалист по закупкам' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'order_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-warning">
                 <div class="card-body text-center py-4">
-                    <h5 class="card-title text-warning">Заказы</h5>
+                    <h5 class="card-title text-warning fw-bold">Заказы</h5>
                 </div>
             </div>
         </a>
     </div>
     {% endif %}
-    {% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Продавец-консультант' %}
+
+    <!-- 4. ОТЧЕТ О ПРОДАЖАХ (Менеджер и Закупщик) -->
+    {% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Специалист по закупкам' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'sale_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-success">
                 <div class="card-body text-center py-4">
-                    <h5 class="card-title text-success">Продажи</h5>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-6 col-lg-3">
-        <a href="{% url 'client_list' %}" class="text-decoration-none">
-            <div class="card h-100 hover-card border-secondary">
-                <div class="card-body text-center py-4">
-                    <h5 class="card-title text-secondary">Клиенты</h5>
+                    <h5 class="card-title text-success fw-bold">Отчет о продажах</h5>
                 </div>
             </div>
         </a>
     </div>
     {% endif %}
+
+    <!-- 5. ОФОРМИТЬ ПРОДАЖУ (Менеджер и Продавец) -->
+     {% if user.employee_profile.rank == 'Продавец-консультант' %}
+    <div class="col-md-6 col-lg-3">
+        <a href="{% url 'create_sale' %}" class="text-decoration-none">
+            <div class="card h-100 hover-card border-success">
+                <div class="card-body text-center py-4">
+                    <h5 class="card-title text-success fw-bold">Оформить продажу</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 6. КЛИЕНТЫ (Менеджер и Продавец) -->
+    {% if user.employee_profile.rank == 'Менеджер' or user.employee_profile.rank == 'Продавец-консультант' %}
+    <div class="col-md-6 col-lg-3">
+        <a href="{% url 'client_list' %}" class="text-decoration-none">
+            <div class="card h-100 hover-card border-secondary">
+                <div class="card-body text-center py-4">
+                    <h5 class="card-title text-secondary fw-bold">Клиенты</h5>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- 7. ПЕРСОНАЛ (Только Менеджер) -->
     {% if user.employee_profile.rank == 'Менеджер' %}
     <div class="col-md-6 col-lg-3">
         <a href="{% url 'employee_list' %}" class="text-decoration-none">
             <div class="card h-100 hover-card border-dark">
                 <div class="card-body text-center py-4">
-                    <h5 class="card-title text-dark">Персонал</h5>
+                    <h5 class="card-title text-dark fw-bold">Персонал</h5>
                 </div>
             </div>
         </a>
     </div>
     {% endif %}
+
 </div>
+
+<style>
+    .hover-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        background-color: #fff;
+        cursor: pointer;
+    }
+</style>
 {% endblock %}

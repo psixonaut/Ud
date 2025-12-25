@@ -48,11 +48,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     "default": {
 'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'auto_dealer',      # Имя базы данных
-        'USER': 'admin',      # Логин
-        'PASSWORD': 'QSTby7lqg4fQ',  # Пароль
-        'HOST': '77.110.124.231',     # Или IP сервера
-        'PORT': '5432',
+        'NAME': '',      # Имя базы данных
+        'USER': '',      # Логин
+        'PASSWORD': '',  # Пароль
+        'HOST': '',     # Или IP сервера
+        'PORT': '',
     }
 }
 

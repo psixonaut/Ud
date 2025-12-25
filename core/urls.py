@@ -13,6 +13,7 @@ urlpatterns = [
     path('cars/', views.car_list, name='car_list'),
     path('cars/<str:vin>/', views.car_detail, name='car_detail'),
     path('cars/<str:vin>/edit/', views.edit_car, name='edit_car'),
+    path('sales/reassign/<str:car_vin>/', views.reassign_car, name='reassign_car'),
 
     # ЗАКУПКИ
     path('orders/', views.order_list, name='order_list'),
@@ -30,6 +31,8 @@ urlpatterns = [
     path('test-drives/new/', views.create_test_drive, name='create_test_drive'),
     path('test-drives/<int:td_id>/', views.test_drive_detail, name='test_drive_detail'),
     path('test-drives/<int:td_id>/edit/', views.edit_test_drive, name='edit_test_drive'),
+    path('test-drives/<int:td_id>/cancel/', views.cancel_test_drive, name='cancel_test_drive'),
+    path('test-drives/<int:td_id>/delete/', views.delete_test_drive, name='delete_test_drive'),
 
     # ПЕРСОНАЛ
     path('employees/', views.employee_list, name='employee_list'),

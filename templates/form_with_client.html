@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ field.label }}</label>
+                        
+                        <!-- СПЕЦИАЛЬНАЯ ЛОГИКА ДЛЯ ПОЛЯ КЛИЕНТА -->
+                        {% if field.name == 'passport_client' %}
+                            <div class="input-group">
+                                {{ field }}
+                                <!-- Кнопка ведет на добавление клиента и передает текущий URL как 'next' -->
+                                <a href="{% url 'add_client' %}?next={{ request.path }}" class="btn btn-success" title="Добавить нового клиента">
+                                    ➕ Новый
+                                </a>
+                            </div>
+                            <div class="form-text">Выберите из списка или создайте нового</div>
+                        
+                        {% else %}
+                            <!-- Обычные поля -->
+                            {{ field }}
+                        {% endif %}
+
+                        {% if field.help_text and field.name != 'passport_client' %}
+                            <div class="form-text text-muted">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {{ field.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary px-4">Назад</a>
+                        <button type="submit" class="btn btn-success px-4">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

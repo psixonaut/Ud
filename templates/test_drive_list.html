@@ -25,7 +25,7 @@
         <tbody>
             {% for td in tds %}
             <tr class="clickable-row" onclick="window.location='{% url 'test_drive_detail' td.id_test %}'" style="cursor: pointer;">
-                <td><strong>{{ td.datetime_reservation|date:"d.m H:i" }}</strong></td>
+                <td><strong>{{ td.datetime_reservation|date:"d.m.Y H:i" }}</strong></td>
                 <td>{{ td.vin.make }} {{ td.vin.model }}</td>
                 <td>{{ td.passport_client.fio }}</td>
                 <td>{{ td.id_employee.fio }}</td>

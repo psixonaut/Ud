@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-warning shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">⚠ Внимание!</h4>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Продажа тестового автомобиля</h5>
+                <p>Вы пытаетесь продать автомобиль <strong>{{ old_car }}</strong>.</p>
+                <p>На него запланировано <strong>{{ count }}</strong> активных тест-драйвов.</p>
+                <p>Пожалуйста, выберите другой автомобиль из парка тест-драйва, чтобы перенести эти записи.</p>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ form.new_car.label }}</label>
+                        {{ form.new_car }}
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-warning">Перенести и вернуться к продаже</button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-light">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

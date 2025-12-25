@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.forms import formset_factory
 from .models import *
 
+ALLOWED_STATUSES = ['В продаже', 'Для тест-драйвов']
 
 # --- 1. АВТОРИЗАЦИЯ ---
 class LoginForm(forms.Form):
@@ -22,8 +23,9 @@ class CarFilterForm(forms.Form):
     year_min = forms.IntegerField(required=False, label="Год от",
                                   widget=forms.NumberInput(attrs={'class': 'form-control'}))
 
+
     status = forms.ChoiceField(
-        choices=[('', 'Все статусы')] + [s for s in STATUS_CHOICES if s[0] != 'В пути'],
+        choices=[('', 'Все статусы')] + [s for s in STATUS_CHOICES if s[0] in ALLOWED_STATUSES],
         required=False,
         label="Статус",
         widget=forms.Select(attrs={'class': 'form-select'})
@@ -81,8 +83,7 @@ class CarArrivalForm(forms.Form):
     vin = forms.CharField(label="VIN номер", widget=forms.TextInput(attrs={'class': 'form-control'}))
     color = forms.CharField(label="Цвет", widget=forms.TextInput(attrs={'class': 'form-control'}))
     price = forms.IntegerField(label="Цена продажи (₽)", widget=forms.NumberInput(attrs={'class': 'form-control'}))
-    date_of_delivery = forms.DateField(label="Дата поступления",
-                                       widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}))
+
 CarArrivalFormSet = formset_factory(CarArrivalForm, extra=0)
 
 
@@ -96,6 +97,37 @@ class SaleForm(forms.Form):
     end_price = forms.IntegerField(label="Итоговая цена (0 = рассчитать автоматически)", required=False,
                                    widget=forms.NumberInput(attrs={'class': 'form-control', 'id': 'id_end_price'}))
 
+
+class SaleFilterForm(forms.Form):
+    search = forms.CharField(
+        required=False,
+        label="Поиск",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'VIN, Авто, Клиент...'})
+    )
+
+    date_from = forms.DateField(
+        required=False,
+        label="С даты",
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+
+    date_to = forms.DateField(
+        required=False,
+        label="По дату",
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+
+    price_min = forms.IntegerField(
+        required=False,
+        label="Цена от",
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
+
+    price_max = forms.IntegerField(
+        required=False,
+        label="Цена до",
+        widget=forms.NumberInput(attrs={'class': 'form-control'})
+    )
 
 # --- 5. ТЕСТ-ДРАЙВЫ ---
 class TestDriveForm(forms.ModelForm):
@@ -119,12 +151,50 @@ class TestDriveEditForm(forms.ModelForm):
     class Meta:
         model = Test_drive
         fields = ['datetime_reservation', 'result']
-        labels = {'datetime_reservation': 'Дата и время', 'result': 'Результат'}
+        labels = {
+            'datetime_reservation': 'Дата и время (Оставьте пустым, чтобы не менять)',
+            'result': 'Результат (Оставьте пустым, чтобы не менять)'
+        }
         widgets = {
             'datetime_reservation': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
             'result': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Делаем поля необязательными в HTML
+        self.fields['datetime_reservation'].required = False
+        self.fields['result'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        if not cleaned_data.get('datetime_reservation'):
+            cleaned_data['datetime_reservation'] = self.instance.datetime_reservation
+            self.cleaned_data['datetime_reservation'] = self.instance.datetime_reservation
+        if not cleaned_data.get('result'):
+            cleaned_data['result'] = self.instance.result
+            self.cleaned_data['result'] = self.instance.result
+
+        return cleaned_data
+
+class TestDriveResultOnlyForm(forms.ModelForm):
+    class Meta:
+        model = Test_drive
+        fields = ['result']
+        labels = {
+            'result': 'Изменить результат'
+        }
+        widgets = {
+            'result': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+class CarReassignForm(forms.Form):
+    new_car = forms.ModelChoiceField(
+        queryset=Car.objects.filter(car_status='Для тест-драйвов'),
+        label="Выберите другой автомобиль для переноса записей",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
 # --- 6. ПЕРСОНАЛ ---
 class EmployeeForm(forms.ModelForm):
